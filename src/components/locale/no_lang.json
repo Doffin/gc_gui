@@ -1,0 +1,38 @@
+{
+    "i18n": {
+        "no": "Norsk"
+    },
+    "GCDULink": {
+        "pressure": {"elementId": "pressureLabel", "unitElementId": "pressureUnit", "label": "Trykk", "unit": "kPa","tooltip": "Trykk i det hydrauliske systemet"},
+        "force": {"elementId": "forceLabel", "unitElementId": "forceUnit", "label": "Kraft", "unit": "kN","tooltip": "Kraft som påføres av det hydrauliske systemet"},
+        "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Avstand", "unit": "mm","tooltip": "Avstand målt av sensoren"},
+        "pumpState": {"elementId": "pumpStateLabel", "label": "Pumpetilstand","tooltip": "Nåværende tilstand til pumpen"}
+    },
+    "MeasurementTable": {
+        "tableHeader": [
+            {"label": "Steg", "tooltip": "Steg nummer"},
+            {"label": "Fase", "tooltip": "Fase"},
+            {"label": "Måltrykk", "unit": "kPa", "tooltip": "Ønsket trykk i kilopascal"},
+            {"label": "Trykk", "unit": "kPa", "tooltip": "Observerte trykk i kilopascal"},
+            {"label": "Setning", "unit": "mm", "tooltip": "Setning av bakken i millimeter"},
+            {"label": "Hastighet", "unit": "mm/min", "tooltip": "Sighastighet i millimeter per minutt"},
+            {"label": "Tid", "unit": "hh:mm:ss", "tooltip": "Når målingen ble tatt"},
+            {"label": "Resultat",  "tooltip": "Resultat av stabilitetstest"}
+        ]   
+    },
+    "SummaryTable": {
+        "tableHeader": [
+            {"label": "Test #", "tooltip": "Test nummer"},
+            {"label": "Ev1", "unit": "MPa", "tooltip": "Ev1 i megapascals"},
+            {"label": "Ev2", "unit": "MPa", "tooltip": "Ev2 i megapascals"},
+            {"label": "Ev2/Ev1", "tooltip": "Ev2 delt på Ev1"},
+            {"label": "Veireferanse", "tooltip": "Veireferanse"},
+            {"label": "Lokasjon", "tooltip": "Lokasjon av testen"},
+            {"label": "Starttid", "tooltip": "Starttid for testen"},
+            {"label": "Sluttid", "tooltip": "Sluttid for testen"},
+            {"label": "Rapport", "tooltip": "Testrapport"}
+        ]
+    }
+
+
+}

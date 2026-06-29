@@ -1,0 +1,37 @@
+{
+    "i18n": {
+        "en": "English"
+    },
+    "GCDULink": {
+        "pressure": {"elementId": "pressureLabel", "unitElementId": "pressureUnit", "label": "Pressure", "unit": "kPa","tooltip": "Pressure in the hydraulic system"},
+        "force": {"elementId": "forceLabel", "unitElementId": "forceUnit", "label": "Force", "unit": "kN","tooltip": "Force applied by the hydraulic system"},
+        "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Distance", "unit": "mm","tooltip": "Distance measured by the sensor"},
+        "pumpState": {"elementId": "pumpStateLabel", "label": "Pump State","tooltip": "Current state of the pump"}
+    },
+    "MeasurementTable": {
+        "tableHeader": [
+            {"label": "Step", "tooltip": "Step number"},
+            {"label": "Phase", "tooltip": "Phase"},
+            {"label": "Aim Pressure", "unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
+            {"label": "Pressure", "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
+            {"label": "Settling", "unit": "mm", "tooltip": "Settling distance in millimeters"},
+            {"label": "Speed", "unit": "mm/min", "tooltip": "Settling speed in millimeters per minute"},
+            {"label": "Time", "unit": "hh:mm:ss", "tooltip": "When measurement was taken"},
+            {"label": "Result",  "tooltip": "Result of stability test"}
+        ]
+    },
+    "SummaryTable": {
+        "tableHeader": [
+            {"label": "Test #", "tooltip": "Test number"},
+            {"label": "Ev1", "unit": "MPa", "tooltip": "Ev1 in megapascals"},
+            {"label": "Ev2", "unit": "MPa", "tooltip": "Ev2 in megapascals"},
+            {"label": "Ev2/Ev1", "tooltip": "Ev2 divided by Ev1"},
+            {"label": "Road Ref", "tooltip": "Road reference"},
+            {"label": "Location", "tooltip": "Location of the test"},
+            {"label": "Start Time", "tooltip": "Start time of the test"},
+            {"label": "End Time", "tooltip": "End time of the test"},
+            {"label": "Report", "tooltip": "Test report"}
+        ]
+    }
+
+}
