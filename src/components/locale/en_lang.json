@@ -8,7 +8,27 @@
         "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Distance", "unit": "mm","tooltip": "Distance measured by the sensor"},
         "pumpState": {"elementId": "pumpStateLabel", "label": "Pump State","tooltip": "Current state of the pump"}
     },
+    "DataUnit": {
+        "title": "Data Unit",
+        "blankRows": 5,
+        "tableHeader": [
+            {"label": "Target", "unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
+            {"label": "Pressure", "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
+            {"label": "Settling", "unit": "mm", "tooltip": "Settling distance in millimeters"},
+            {"label": "Speed", "unit": "mm/min", "tooltip": "Settling speed in millimeters per minute"},
+            {"label": "Time", "unit": "hh:mm:ss", "tooltip": "When measurement was taken"}
+        ]
+    },
+    "MeasurementGraph": {
+        "title": "Measurement Graph",
+        "tableHeader": [
+            {"label": "X Axis", "unit": "mm", "tooltip": "X axis label"},
+            {"label": "Y Axis", "unit": "kPa", "tooltip": "Y axis label"}
+        ]
+    },
     "MeasurementTable": {
+        "title": "Measurement Table",
+        "blankRows": 10, 
         "tableHeader": [
             {"label": "Step", "tooltip": "Step number"},
             {"label": "Phase", "tooltip": "Phase"},
@@ -21,6 +41,8 @@
         ]
     },
     "SummaryTable": {
+        "title": "Summary Table",
+        "blankRows": 4,
         "tableHeader": [
             {"label": "Test #", "tooltip": "Test number"},
             {"label": "Ev1", "unit": "MPa", "tooltip": "Ev1 in megapascals"},

@@ -1,0 +1,60 @@
+{
+    "i18n": {
+        "pl": "Polski"
+    },
+    "GCDULink": {
+        "pressure": {"elementId": "pressureLabel", "unitElementId": "pressureUnit", "label": "Ciśnienie", "unit": "kPa","tooltip": "Ciśnienie w układzie hydraulicznym"},
+        "force": {"elementId": "forceLabel", "unitElementId": "forceUnit", "label": "Siła", "unit": "kN","tooltip": "Siła działająca w układzie hydraulicznym"},
+        "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Odległość", "unit": "mm","tooltip": "Odległość mierzona przez czujnik"},
+        "pumpState": {"elementId": "pumpStateLabel", "label": "Stan pompy","tooltip": "Aktualny stan pompy"}
+    },
+    "DataUnit": {
+        "title": "Jednostka danych",
+        "blankRows": 5,
+        "tableHeader": [
+            {"label": "Cel", "unit": "kPa", "tooltip": "Docelowe ciśnienie w kilopaskalach"},
+            {"label": "Ciśnienie", "unit": "kPa", "tooltip": "Obserwowane ciśnienie w kilopaskalach"},
+            {"label": "Osadzenie", "unit": "mm", "tooltip": "Odległość osadzenia w milimetrach"},
+            {"label": "Prędkość", "unit": "mm/min", "tooltip": "Prędkość osadzenia w milimetrach na minutę"},
+            {"label": "Czas", "unit": "hh:mm:ss", "tooltip": "Czas wykonania pomiaru"}
+        ]
+    },
+    "MeasurementGraph": {
+        "title": "Wykres pomiarowy",
+        "blankRows": 5,
+        "tableHeader": [
+            {"label": "Oś X", "unit": "mm", "tooltip": "Etykieta osi X"},
+            {"label": "Oś Y", "unit": "kPa", "tooltip": "Etykieta osi Y"}
+        ]
+    },
+    "MeasurementTable": {
+        "title": "Tabela pomiarowa",
+        "blankRows": 10,
+        "tableHeader": [
+            {"label": "Krok", "tooltip": "Numer kroku"},
+            {"label": "Faza", "tooltip": "Faza"},
+            {"label": "Cel", "unit": "kPa", "tooltip": "Docelowe ciśnienie w kilopaskalach"},
+            {"label": "Ciśnienie", "unit": "kPa", "tooltip": "Obserwowane ciśnienie w kilopaskalach"},
+            {"label": "Osadzenie", "unit": "mm", "tooltip": "Odległość osadzenia w milimetrach"},
+            {"label": "Prędkość", "unit": "mm/min", "tooltip": "Prędkość osadzenia w milimetrach na minutę"},
+            {"label": "Czas", "unit": "hh:mm:ss", "tooltip": "Czas wykonania pomiaru"},
+            {"label": "Wynik",  "tooltip": "Wynik testu stabilności"}
+        ]
+    },
+    "SummaryTable": {
+        "title": "Tabela podsumowująca",
+        "blankRows": 4,
+        "tableHeader": [
+            {"label": "Test #", "tooltip": "Numer testu"},
+            {"label": "Ev1", "unit": "MPa", "tooltip": "Ev1 w megapaskalach"},
+            {"label": "Ev2", "unit": "MPa", "tooltip": "Ev2 w megapaskalach"},
+            {"label": "Ev2/Ev1", "tooltip": "Ev2 podzielone przez Ev1"},
+            {"label": "Odniesienie do drogi", "tooltip": "Odniesienie do drogi"},
+            {"label": "Lokalizacja", "tooltip": "Lokalizacja testu"},
+            {"label": "Czas rozpoczęcia", "tooltip": "Czas rozpoczęcia testu"},
+            {"label": "Czas zakończenia", "tooltip": "Czas zakończenia testu"},
+            {"label": "Raport", "tooltip": "Raport z testu"}
+        ]
+    }
+
+}

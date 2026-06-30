@@ -1,7 +1,5 @@
 import w3_css from "./w3.css?inline";
-
-const localeCatalogCache = new Map();
-const localeCatalogRequests = new Map();
+import { loadLanguageCatalog, normalizeLanguageCode } from "./locale/locale-loader.js";
 
 class GCSerialPort extends HTMLElement {
     static get observedAttributes() {
@@ -84,11 +82,7 @@ class GCSerialPort extends HTMLElement {
     }
 
     normalizeLanguageCode(value) {
-        if (typeof value !== "string") {
-            return "";
-        }
-
-        return value.trim().slice(0, 2).toLowerCase();
+        return normalizeLanguageCode(value);
     }
 
     async onLanguageChange(event) {
@@ -103,36 +97,13 @@ class GCSerialPort extends HTMLElement {
             return null;
         }
 
-        if (localeCatalogCache.has(normalizedCode)) {
-            return localeCatalogCache.get(normalizedCode);
+        try {
+            return await loadLanguageCatalog(normalizedCode);
+        } catch (error) {
+            this.emitAppLog("warn", `Could not load locale '${normalizedCode}'`);
+            console.warn("Failed to load locale catalog:", normalizedCode, error);
+            return null;
         }
-
-        if (localeCatalogRequests.has(normalizedCode)) {
-            return localeCatalogRequests.get(normalizedCode);
-        }
-
-        const request = (async () => {
-            try {
-                const url = new URL(`./locale/${normalizedCode}_lang.json`, import.meta.url);
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error(`Locale file not found: ${normalizedCode}`);
-                }
-
-                const catalog = await response.json();
-                localeCatalogCache.set(normalizedCode, catalog);
-                return catalog;
-            } catch (error) {
-                this.emitAppLog("warn", `Could not load locale '${normalizedCode}'`);
-                console.warn("Failed to load locale catalog:", normalizedCode, error);
-                return null;
-            } finally {
-                localeCatalogRequests.delete(normalizedCode);
-            }
-        })();
-
-        localeCatalogRequests.set(normalizedCode, request);
-        return request;
     }
 
     applyComponentLocale(componentCatalog) {

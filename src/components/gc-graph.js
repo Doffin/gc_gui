@@ -24,12 +24,13 @@ template.innerHTML = `
       font-size: 0.8rem;
       border-collapse: collapse;
       width: 100%;
+
     }
 
     .my_table th {
       background: #2f3744;
       color: #fff;
-      border: 1px solid #3f4754;    
+      border: 1px solid #335555;    
       text-align: center;
       padding: 8px;
     }
@@ -44,7 +45,7 @@ template.innerHTML = `
 
   <div class="w3-container">
     <div class="body">
-    <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Table</h2>
+    <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Graph</h2>
     <table class="w3-table w3-hoverable my_table">
         <thead id="tableHeader">
         <tr id="tableHeaderRow"> </tr>
@@ -59,7 +60,7 @@ template.innerHTML = `
     </div>
   </div>
 `;
-class GCTable extends HTMLElement {
+class GCGraph extends HTMLElement {
     static get observedAttributes() {
         return ["title","componentIdentifier"];
     }
@@ -70,7 +71,7 @@ class GCTable extends HTMLElement {
         root.append(template.content.cloneNode(true));
         this.titleElement = root.getElementById("title");
         this.onLanguageChange = this.onLanguageChange.bind(this);
-        this.componentIdentifier = this.getAttribute("componentIdentifier") || "MeasurementTable";  
+        this.componentIdentifier = this.getAttribute("componentIdentifier") || "MeasurementGraph";  
     }
 
     connectedCallback() {
@@ -81,15 +82,8 @@ class GCTable extends HTMLElement {
         this.render();
     }
 
-    initBlankLines(numberToInit) {
-        const getNumberOfColumns = this.shadowRoot.getElementById("tableHeaderRow").children.length;
-        for (let i = 0; i < numberToInit; i++) {
-            this.appendRowToTable(new Array(getNumberOfColumns).fill(""));
-        }
-    }
-
     attributeChangedCallback() {
-        this.componentIdentifier = this.getAttribute("componentIdentifier") || "MeasurementTable";
+        this.componentIdentifier = this.getAttribute("componentIdentifier") || "MeasurementGraph";
         this.render();
     }
 
@@ -117,10 +111,15 @@ class GCTable extends HTMLElement {
     }
 
     async applyLanguageChange(languageCatalog) {
-        const titleText = languageCatalog?.[this.componentIdentifier]?.title || "Table";
+        const titleText = languageCatalog?.[this.componentIdentifier]?.title || "Graph";
         this.titleElement.textContent = titleText;
+        // We will have to update this to a Graph relevant function, but for now,
+        // we just make a small table with what will become xaxi and yaxis legend, units etc.
+        // Just to see the consept works.
+        // Yes, now we have working language change etc. Cool! 
+        // I think we need to reduce the font-size for the table headers, they are very big now.
 
-        const tableHeaderData = this.getTableHeader(languageCatalog);
+        const tableHeaderData = this.getMeasurementTableHeader(languageCatalog);
         if (tableHeaderData) {
             this.setTableHeaderWithUnits(tableHeaderData);
         }
@@ -129,14 +128,17 @@ class GCTable extends HTMLElement {
             // Let us add blank lines so we see something.
             this.initBlankLines(blankRows-this.getRowCount());
         }
-        // For some reason, this works for measurementstable and summarytable, but not the other two.
-        // We will have to update this to a Graph relevant function, but for now,
-        // we just make a small table with what will become xaxi and yaxis legend, units etc.
-        // Sould we also allow scrollbar policy to be defined? Maybe keep that in in the HTML code.
-        
+    
     }
     
-    getTableHeader(languageCatalog) {
+    initBlankLines(numberToInit) {
+        const getNumberOfColumns = this.shadowRoot.getElementById("tableHeaderRow").children.length;
+        for (let i = 0; i < numberToInit; i++) {
+            this.appendRowToTable(new Array(getNumberOfColumns).fill(""));
+        }
+    }
+
+    getMeasurementTableHeader(languageCatalog) {
         const tableHeader = languageCatalog?.[this.componentIdentifier]?.tableHeader;
         if (!tableHeader || typeof tableHeader !== "object") {
             return null;
@@ -153,7 +155,7 @@ class GCTable extends HTMLElement {
     }
 
     render() {
-        this.titleElement.textContent = this.getAttribute("title") || "Table";
+        this.titleElement.textContent = this.getAttribute("title") || "Graph";
     }
 
     setTableHeader(headerData) {
@@ -225,6 +227,6 @@ class GCTable extends HTMLElement {
 
 }
 
-customElements.define("gc-table", GCTable);
+customElements.define("gc-graph", GCGraph);
 
-export { GCTable };
+export { GCGraph };

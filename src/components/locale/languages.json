@@ -1,0 +1,6 @@
+{ "supportedLanguages": [
+    { "code": "en", "label": "English" },
+    { "code": "pl", "label": "Polski" },    
+    { "code": "no", "label": "Norsk" }
+    ]
+}

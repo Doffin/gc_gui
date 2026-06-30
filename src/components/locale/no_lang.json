@@ -8,7 +8,28 @@
         "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Avstand", "unit": "mm","tooltip": "Avstand målt av sensoren"},
         "pumpState": {"elementId": "pumpStateLabel", "label": "Pumpetilstand","tooltip": "Nåværende tilstand til pumpen"}
     },
+    "DataUnit": {
+        "title": "Datamodul",
+        "blankRows": 5,
+        "tableHeader": [
+            {"label": "Måltrykk", "unit": "kPa", "tooltip": "Ønsket trykk i kilopascal"},
+            {"label": "Trykk", "unit": "kPa", "tooltip": "Observerte trykk i kilopascal"},
+            {"label": "Setning", "unit": "mm", "tooltip": "Setning av bakken i millimeter"},
+            {"label": "Hastighet", "unit": "mm/min", "tooltip": "Sighastighet i millimeter per minutt"},
+            {"label": "Tid", "unit": "hh:mm:ss", "tooltip": "Når målingen ble tatt"}
+        ]
+    },
+    "MeasurementGraph": {
+        "title": "Måle graf",
+        "blankRows": 5,
+        "tableHeader": [
+            {"label": "Oś X", "unit": "mm", "tooltip": "Etykieta osi X"},
+            {"label": "Oś Y", "unit": "kPa", "tooltip": "Etykieta osi Y"}
+        ]
+    },
     "MeasurementTable": {
+        "title": "Målingstabell",
+        "blankRows": 10,
         "tableHeader": [
             {"label": "Steg", "tooltip": "Steg nummer"},
             {"label": "Fase", "tooltip": "Fase"},
@@ -21,6 +42,8 @@
         ]   
     },
     "SummaryTable": {
+        "title": "Sammendragstabell",
+        "blankRows": 4,
         "tableHeader": [
             {"label": "Test #", "tooltip": "Test nummer"},
             {"label": "Ev1", "unit": "MPa", "tooltip": "Ev1 i megapascals"},

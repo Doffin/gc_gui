@@ -1,100 +1,114 @@
 <!doctype html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Groundcheck</title>
+    <title>Groundcheck</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
     <style>
-      body {
-        margin: 0;
-        padding-bottom: 14rem;
-      }
+        body {
+            margin: 0;
+            padding-bottom: 14rem;
+        }
 
-      .gc-topbar {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-      }
+        .gc-topbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
 
-      .gc-topbar .gc-topbar-spacer {
-        margin-left: auto;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        flex: 0 0 auto;
-      }
+        .gc-topbar .gc-topbar-spacer {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex: 0 0 auto;
+        }
 
-      .gc-topbar .w3-bar-item {
-        float: none;
-        display: flex;
-        align-items: center;
-        padding-top: 0;
-        padding-bottom: 0;
-        width: auto;
-      }
+        .gc-topbar .w3-bar-item {
+            float: none;
+            display: flex;
+            align-items: center;
+            padding-top: 0;
+            padding-bottom: 0;
+            width: auto;
+        }
 
-      .gc-topbar h1 {
-        margin: 0;
-        white-space: nowrap;
-        font-size: clamp(1.35rem, 2vw, 2rem);
-      }
+        .gc-topbar h1 {
+            margin: 0;
+            white-space: nowrap;
+            font-size: clamp(1.35rem, 2vw, 2rem);
+        }
 
-      .gc-topbar select {
-        flex: 0 0 auto;
-        min-width: 8rem;
-      }
+        .gc-topbar select {
+            flex: 0 0 auto;
+            min-width: 8rem;
+        }
 
-      .gc-topbar gc-gps-link {
-        flex: 0 0 auto;
-        align-self: center;
-      }
+        .gc-topbar gc-gps-link {
+            flex: 0 0 auto;
+            align-self: center;
+        }
 
-      .gc-message-footer {
-        position: fixed;
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 0.6rem;
-        width: min(96vw, 1200px);
-        z-index: 20;
-      }
+        .gc-message-footer {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 0.6rem;
+            width: min(96vw, 1200px);
+            z-index: 20;
+        }
     </style>
-    <script type="module" crossorigin src="/assets/index-B3u2Dba7.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-0xL-jKr8.css">
-  </head>
-  <body>
+  <script type="module" crossorigin src="/assets/index-m1lZIEzI.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-0xL-jKr8.css">
+</head>
+
+<body>
     <div class="w3-card w3-container w3-padding w3-border w3-round">
-      <div class="gc-topbar w3-bar w3-light-gray w3-border w3-round">
-        <div class="w3-bar-item w3-large"><h1>Groundcheck</h1></div>
-        <div class="gc-topbar-spacer">
-          <select class="w3-select w3-bar-item" id="gcLangSelect" title="Language"></select>
-          <gc-gps-link class="w3-bar-item" id="gcGPSLink" title="GPS"></gc-gps-link>
+        <div class="gc-topbar w3-bar w3-light-gray w3-border w3-round">
+            <div class="w3-bar-item w3-large">
+                <h1>Groundcheck</h1>
+            </div>
+            <div class="gc-topbar-spacer">
+                <select class="w3-select w3-bar-item" id="gcLangSelect" title="Language"></select>
+                <gc-gps-link class="w3-bar-item" id="gcGPSLink" title="GPS"></gc-gps-link>
+            </div>
         </div>
-      </div>
     </div>
+    <gc-du-link id="gcDULink" title="DU"></gc-du-link>
     <div class="w3-card w3-container w3-padding w3-border w3-round w3-margin-top">
         <div class="w3-row">
             <div class="w3-col w3-half">
                 <div class="w3-row">
-                    <div class="w3-col w3-half">
-                        <gc-du-link id="gcDULink" title="DU"></gc-du-link>
+                    <div class="w3-col w3-card w3-round w3-border w3-left" style="width:55%; margin-right: 1rem;">
+                        <gc-dataunit id="DataUnit" componentIdentifier="DataUnit" title="Test Data Unit">
+                        </gc-dataunit>
                     </div>
-                    <div class="w3-col w3-half w3-red w3-border">
-                        <p>Graph Panel</p>
+                    <div class="w3-col w3-card w3-round w3-border w3-right" style="width:40%;">
+                        <gc-graph id="MeasurementGraph" componentIdentifier="MeasurementGraph"
+                            title="Test Measurement Graph">
+                        </gc-graph>
                     </div>
                 </div>
             </div>
-            <div class="w3-col w3-half">
-              <gc-table id="gcTestMeasurementTable" title="Test Table">
-              </gc-table>
+            <div class="w3-col w3-card w3-round w3-border" style="width:49%; margin-left: 1rem;">
+                <gc-table id="MeasurementTable" componentIdentifier="MeasurementTable" title="Test Measurement Table">
+                </gc-table>
             </div>
-        </div>        
+        </div>
+        <div class="w3-col w3-card w3-round w3-border" style="margin-top: 1rem;">
+            <gc-table id="SummaryTable" componentIdentifier="SummaryTable" title="Summary Table">
+            </gc-table>
+        </div>
     </div>
     <div class="w3-card w3-container w3-footer w3-padding w3-border w3-round w3-margin-top">
-    <div class="gc-message-footer w3-hide-small">
-      <gc-message-area id="gcMessageArea" max-entries="150"></gc-message-area>
-    </div>
+        <div class="gc-message-footer w3-hide-small">
+            <gc-message-area id="gcMessageArea" max-entries="150"></gc-message-area>
+        </div>
     </div>
-  </body>
+</body>
+
 </html>

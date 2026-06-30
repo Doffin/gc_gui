@@ -6,22 +6,11 @@ import "./components/gc-du-link.js";
 import "./components/gc-gps-link.js";
 import "./components/gc-message-area.js";
 import "./components/gc-table.js";
-//import { GCTable } from "./components/gc-table.js";
+import "./components/gc-dataunit.js";
+import "./components/gc-graph.js";
+import "./components/gc-datalink.js";
 
-async function loadLanguageCatalog(code) {
-    const normalizedCode = String(code || "").trim().slice(0, 2).toLowerCase();
-    if (!normalizedCode) {
-        return null;
-    }
-
-    const localeUrl = new URL(`./components/locale/${normalizedCode}_lang.json`, import.meta.url);
-    const response = await fetch(localeUrl);
-    if (!response.ok) {
-        throw new Error(`Failed to load locale '${normalizedCode}' (${response.status})`);
-    }
-
-    return response.json();
-}
+import { loadLanguageCatalog, supportedLanguagesCatalog } from "./components/locale/locale-loader.js";
 
 window.addEventListener("count-change", (event) => {
     console.log("Count changed:", event.detail.value);
@@ -33,16 +22,17 @@ window.addEventListener("count-change", (event) => {
 document.addEventListener("DOMContentLoaded", () => {
     const langSelect = document.getElementById("gcLangSelect");
     if (langSelect) {
-        const languages = [
-            { code: "en", label: "English" },
-            { code: "no", label: "Norsk" },
-        ];
+        const languages = Array.isArray(supportedLanguagesCatalog?.supportedLanguages)
+            ? supportedLanguagesCatalog.supportedLanguages
+            : [];
+
         languages.forEach((lang) => {
             const option = document.createElement("option");
             option.value = lang.code;
             option.textContent = lang.label;
             langSelect.appendChild(option);
         });
+
         langSelect.addEventListener("change", (event) => {
             setAppLanguage(event.target.value);
         });
