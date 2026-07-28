@@ -221,7 +221,6 @@ class GCMessageArea extends HTMLElement {
       source: detail.source || "app",
       message: detail.message || "(no message)",
     };
-
     if (this.isFrozen) {
       this.bufferedEntries.push(entry);
       this.updateHeaderState();

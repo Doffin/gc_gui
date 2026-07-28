@@ -1,13 +1,25 @@
 import w3_css from "./w3.css?inline";
 import { loadLanguageCatalog, normalizeLanguageCode } from "./locale/locale-loader.js";
+import { GCDataLink } from "./gc-datalink.js";
+import { GcBleLink } from "./gc-blelink.js";
 
-class GCSerialPort extends HTMLElement {
+class GCLinkHost extends HTMLElement {
     static get observedAttributes() {
-        return ["title", "counter"];
+        return ["title", "counter", "autoconnect", "autoconnect-interval-ms", "transport", "ble-service-uuid"];
     }
 
     constructor() {
         super();
+        this.defaultAutoConnectRequested = false;
+        this.currentLanguageCode = null;
+        this.counter = 0;
+
+        this.onOpenPortClick = this.onOpenPortClick.bind(this);
+        this.onLanguageChange = this.onLanguageChange.bind(this);
+        this.onDataLinkLog = this.onDataLinkLog.bind(this);
+        this.onDataLinkStatus = this.onDataLinkStatus.bind(this);
+        this.onDataLinkLine = this.onDataLinkLine.bind(this);
+
         const root = this.attachShadow({ mode: "open" });
         root.innerHTML = this.getTemplateHtml();
 
@@ -16,22 +28,94 @@ class GCSerialPort extends HTMLElement {
         this.autoIndicatorEl = root.getElementById("autoIndicator");
         this.messageEl = root.getElementById("message");
         this.statusLEDEl = root.getElementById("statusLED");
-        this.counter = 0;
-        this.verbose = false;
-        this.port = null;
-        this.reader = null;
-        this.keepReading = false;
-        this.isConnecting = false;
-        this.readBuffer = "";
-        this.decoder = new TextDecoder();
-        this.encoder = new TextEncoder();
-        this.autoConnectTimer = null;
-        this.autoConnectEnabled = false;
-        this.autoReconnectOnLoss = false;
-        this.currentLanguageCode = null;
-        this.onOpenPortClick = this.onOpenPortClick.bind(this);
-        this.onSerialDisconnect = this.onSerialDisconnect.bind(this);
-        this.onLanguageChange = this.onLanguageChange.bind(this);
+
+        this.dataLink = this.createDataLink();
+        this.attachDataLinkHooks();
+    }
+
+    getTransport() {
+        const value = String(this.getAttribute("transport") || "serial").trim().toLowerCase();
+        return value === "ble" ? "ble" : "serial";
+    }
+
+    getBleServiceUuid() {
+        return this.getAttribute("ble-service-uuid") || "00005500-d102-11e1-9b23-00025b00a5a5";
+    }
+
+    getDataLinkConfig() {
+        const transport = this.getTransport();
+        const shared = {
+            componentIdentifier: this.id || this.tagName.toLowerCase(),
+        };
+
+        if (transport === "ble") {
+            return {
+                ...shared,
+                serviceUuid: this.getBleServiceUuid(),
+            };
+        }
+
+        return {
+            ...shared,
+            autoconnect: this.isAutoConnectRequested(),
+            autoconnectIntervalMs: this.getAutoConnectIntervalMs(),
+            storageScope: `${this.tagName.toLowerCase()}:${this.id || this.getAttribute("title") || "default"}`,
+        };
+    }
+
+    createDataLink() {
+        if (this.getTransport() === "ble") {
+            return new GcBleLink(this.getDataLinkConfig());
+        }
+
+        return new GCDataLink(this.getDataLinkConfig());
+    }
+
+    attachDataLinkHooks() {
+        this.dataLink.onPortConnected = async () => {
+            await this.onPortConnected();
+            this.render();
+        };
+        this.dataLink.onPortDisconnected = async () => {
+            await this.onPortDisconnected();
+            this.render();
+        };
+    }
+
+    configureDataLinkFromAttributes() {
+        if (typeof this.dataLink?.configure === "function") {
+            this.dataLink.configure(this.getDataLinkConfig());
+        }
+    }
+
+    async replaceDataLinkIfNeeded(force = false) {
+        const expectedTransport = this.getTransport();
+        const currentTransport = this.dataLink?.getPortStatus?.().transport || "serial";
+        if (!force && expectedTransport === currentTransport) {
+            this.configureDataLinkFromAttributes();
+            return;
+        }
+
+        const previousLink = this.dataLink;
+        if (previousLink) {
+            previousLink.removeEventListener("app-log", this.onDataLinkLog);
+            previousLink.removeEventListener("port-status-change", this.onDataLinkStatus);
+            previousLink.removeEventListener("serial-line", this.onDataLinkLine);
+            previousLink.stopMonitoring?.();
+            await previousLink.disconnectPort({ intentional: true });
+        }
+
+        this.dataLink = this.createDataLink();
+        this.attachDataLinkHooks();
+
+        if (this.isConnected) {
+            this.dataLink.addEventListener("app-log", this.onDataLinkLog);
+            this.dataLink.addEventListener("port-status-change", this.onDataLinkStatus);
+            this.dataLink.addEventListener("serial-line", this.onDataLinkLine);
+            this.dataLink.startMonitoring?.();
+        }
+
+        this.render();
     }
 
     getExtraStyles() {
@@ -83,6 +167,43 @@ class GCSerialPort extends HTMLElement {
 
     normalizeLanguageCode(value) {
         return normalizeLanguageCode(value);
+    }
+
+    isAutoConnectRequested() {
+        const value = this.getAttribute("autoconnect");
+        if (value == null) {
+            return this.defaultAutoConnectRequested;
+        }
+
+        return value !== "false";
+    }
+
+    getAutoConnectIntervalMs() {
+        const value = Number.parseInt(this.getAttribute("autoconnect-interval-ms") || "5000", 10);
+        return Number.isFinite(value) && value >= 1000 ? value : 5000;
+    }
+
+    get port() {
+        if (this.dataLink?.port) {
+            return this.dataLink.port;
+        }
+
+        return this.dataLink?.isConnected?.() ? this.dataLink : null;
+    }
+
+    emitAppLog(level, message, meta = {}) {
+        this.dispatchEvent(
+            new CustomEvent("app-log", {
+                detail: {
+                    level,
+                    source: this.id || this.tagName.toLowerCase(),
+                    message,
+                    ...meta,
+                },
+                bubbles: true,
+                composed: true,
+            }),
+        );
     }
 
     async onLanguageChange(event) {
@@ -166,140 +287,6 @@ class GCSerialPort extends HTMLElement {
 
         this.applyComponentLocale(catalog[componentKey]);
         this.currentLanguageCode = normalizedCode;
-    }
-
-    emitAppLog(level, message, meta = {}) {
-        this.dispatchEvent(
-            new CustomEvent("app-log", {
-                detail: {
-                    level,
-                    source: this.id || this.tagName.toLowerCase(),
-                    message,
-                    ...meta,
-                },
-                bubbles: true,
-                composed: true,
-            }),
-        );
-    }
-
-    isAutoConnectRequested() {
-        const value = this.getAttribute("autoconnect");
-        if (value == null) {
-            return false;
-        }
-
-        return value !== "false";
-    }
-
-    getAutoConnectIntervalMs() {
-        const value = Number.parseInt(this.getAttribute("autoconnect-interval-ms") || "5000", 10);
-        return Number.isFinite(value) && value >= 1000 ? value : 5000;
-    }
-
-    getAutoConnectStorageScope() {
-        return `${this.tagName.toLowerCase()}:${this.id || this.getAttribute("title") || "default"}`;
-    }
-
-    getRememberedPortStorageKey() {
-        return `gc.serial.rememberedPort.${this.getAutoConnectStorageScope()}`;
-    }
-
-    getRememberedPortHint() {
-        try {
-            const raw = localStorage.getItem(this.getRememberedPortStorageKey());
-            if (!raw) {
-                return null;
-            }
-
-            const parsed = JSON.parse(raw);
-            return parsed && typeof parsed === "object" ? parsed : null;
-        } catch {
-            return null;
-        }
-    }
-
-    clearRememberedPortHint() {
-        localStorage.removeItem(this.getRememberedPortStorageKey());
-    }
-
-    rememberCurrentPortHint(extra = {}) {
-        if (!this.port) {
-            return;
-        }
-
-        const info = this.port.getInfo();
-        const payload = {
-            usbVendorId: info.usbVendorId ?? null,
-            usbProductId: info.usbProductId ?? null,
-            updatedAt: new Date().toISOString(),
-            ...extra,
-        };
-
-        localStorage.setItem(this.getRememberedPortStorageKey(), JSON.stringify(payload));
-    }
-
-    isSamePort(port, hint) {
-        if (!port || !hint) {
-            return false;
-        }
-
-        const info = port.getInfo();
-        return (
-            info.usbVendorId === hint.usbVendorId
-            && info.usbProductId === hint.usbProductId
-        );
-    }
-
-    async tryAutoConnect() {
-        if (!this.autoConnectEnabled || this.port || this.isConnecting || !navigator.serial) {
-            return;
-        }
-
-        const hint = this.getRememberedPortHint();
-        if (!hint) {
-            return;
-        }
-
-        const ports = await navigator.serial.getPorts();
-        const match = ports.find((port) => this.isSamePort(port, hint));
-        if (!match) {
-            return;
-        }
-
-        await this.connectPort({ port: match, requestPortIfMissing: false });
-    }
-
-    startAutoConnect() {
-        this.stopAutoConnect();
-        this.autoConnectEnabled = true;
-        this.tryAutoConnect();
-        this.autoConnectTimer = setInterval(() => {
-            this.tryAutoConnect();
-        }, this.getAutoConnectIntervalMs());
-    }
-
-    stopAutoConnect() {
-        this.autoConnectEnabled = false;
-        if (this.autoConnectTimer) {
-            clearInterval(this.autoConnectTimer);
-            this.autoConnectTimer = null;
-        }
-    }
-
-    enableAutoConnect() {
-        this.setAttribute("autoconnect", "true");
-        this.autoReconnectOnLoss = true;
-
-        if (!this.port) {
-            this.startAutoConnect();
-        }
-    }
-
-    disableAutoConnect() {
-        this.setAttribute("autoconnect", "false");
-        this.autoReconnectOnLoss = false;
-        this.stopAutoConnect();
     }
 
     getTemplateHtml() {
@@ -408,8 +395,6 @@ class GCSerialPort extends HTMLElement {
                         .body {
                             color: #1f2937;
                             line-height: 1.5;
-                            border: 1px solid #ff0000;
-
                         }
 
                         ${this.getExtraStyles()}
@@ -434,58 +419,78 @@ class GCSerialPort extends HTMLElement {
     }
 
     connectedCallback() {
+        void this.replaceDataLinkIfNeeded();
+        this.configureDataLinkFromAttributes();
         this.titleEl.addEventListener("click", this.onOpenPortClick);
-        navigator.serial?.addEventListener("disconnect", this.onSerialDisconnect);
         document.addEventListener("app-language-change", this.onLanguageChange);
+
+        this.dataLink.addEventListener("app-log", this.onDataLinkLog);
+        this.dataLink.addEventListener("port-status-change", this.onDataLinkStatus);
+        this.dataLink.addEventListener("serial-line", this.onDataLinkLine);
+        this.dataLink.startMonitoring?.();
+
         this.render();
         this.applyLanguage(this.getDefaultLanguageCode());
     }
 
     disconnectedCallback() {
         this.titleEl.removeEventListener("click", this.onOpenPortClick);
-        navigator.serial?.removeEventListener("disconnect", this.onSerialDisconnect);
         document.removeEventListener("app-language-change", this.onLanguageChange);
-        this.stopAutoConnect();
-        this.disconnectPort();
+
+        this.dataLink.removeEventListener("app-log", this.onDataLinkLog);
+        this.dataLink.removeEventListener("port-status-change", this.onDataLinkStatus);
+        this.dataLink.removeEventListener("serial-line", this.onDataLinkLine);
+        this.dataLink.stopMonitoring?.();
+        this.dataLink.disconnectPort({ intentional: true });
     }
 
-    isPortLostError(error) {
-        return error?.name === "NetworkError" || /device has been lost/i.test(String(error?.message || ""));
-    }
-
-    async handlePortLost(error = null) {
-        if (!this.port && !this.reader) {
-            return;
+    attributeChangedCallback(name) {
+        if (name === "transport") {
+            void this.replaceDataLinkIfNeeded(true);
+        } else if (name === "ble-service-uuid" && this.getTransport() === "ble") {
+            void this.replaceDataLinkIfNeeded(true);
+        } else {
+            this.configureDataLinkFromAttributes();
         }
-
-        if (error) {
-            console.warn("Serial device disconnected:", error);
-            this.emitAppLog("warn", "Serial device disconnected");
-        }
-
-        this.keepReading = false;
-        this.reader = null;
-        this.port = null;
-        await this.onPortDisconnected();
-
-        if (this.autoReconnectOnLoss) {
-            this.startAutoConnect();
-        }
-
         this.render();
     }
 
-    onSerialDisconnect(event) {
-        if (!this.port) {
+    onDataLinkLog(event) {
+        const detail = event?.detail || {};
+        this.emitAppLog(detail.level || "info", detail.message || "(no message)", {
+            source: detail.source || this.id || this.tagName.toLowerCase(),
+        });
+    }
+
+    onDataLinkStatus() {
+        this.render();
+    }
+
+    onDataLinkLine(event) {
+        const line = event?.detail?.line;
+        if (typeof line !== "string") {
             return;
         }
 
-        if (event?.port === this.port) {
-            this.handlePortLost(event);
-        }
-    }
+        this.counter = Number.isFinite(event?.detail?.counter) ? event.detail.counter : this.counter + 1;
+        const handled = this.processIncomingLine(line);
 
-    attributeChangedCallback() {
+        if (!handled && this.messageEl) {
+            this.messageEl.value = line;
+        }
+
+        this.statusLEDEl.setAttribute("counter", String(this.counter));
+        this.dispatchEvent(
+            new CustomEvent("serial-line", {
+                detail: {
+                    line,
+                    handled,
+                },
+                bubbles: true,
+                composed: true,
+            }),
+        );
+
         this.render();
     }
 
@@ -499,193 +504,35 @@ class GCSerialPort extends HTMLElement {
     }
 
     async connectPort(options = {}) {
-        const { port = null, requestPortIfMissing = false } = options;
-
-        if (!navigator.serial) {
-            console.error("Web Serial API is not available in this browser.");
-            return;
-        }
-
-        if (this.isConnecting || this.port) {
-            return;
-        }
-
-        this.isConnecting = true;
-
-        try {
-            if (port) {
-                this.port = port;
-            } else if (requestPortIfMissing) {
-                this.port = await navigator.serial.requestPort();
-            } else {
-                this.port = null;
-                return;
-            }
-
-            await this.port.open({ baudRate: 115200 });
-            this.keepReading = true;
-            this.readBuffer = "";
-            this.readLoop();
-            this.rememberCurrentPortHint();
-            this.autoReconnectOnLoss = this.isAutoConnectRequested();
-            this.stopAutoConnect();
-            console.log("Serial port opened:", this.port);
-            this.emitAppLog("info", "Serial port opened");
-            await this.onPortConnected();
-            this.render();
-        } catch (error) {
-            if(this.verbose) {
-                console.error("Error opening serial port:", error);
-            }
-            this.emitAppLog("error", "Failed to open serial port");
-            this.port = null;
-            this.keepReading = false;
-            this.render();
-        } finally {
-            this.isConnecting = false;
-        }
+        await this.dataLink.connectPort(options);
     }
 
     async disconnectPort(options = {}) {
-        const { intentional = false } = options;
-
-        if (intentional) {
-            this.autoReconnectOnLoss = false;
-            this.stopAutoConnect();
-        }
-
-        this.keepReading = false;
-        const reader = this.reader;
-        this.reader = null;
-
-        try {
-            if (reader) {
-                await reader.cancel();
-                try {
-                    reader.releaseLock();
-                } catch {
-                    // reader may already be released by readLoop cleanup
-                }
-            }
-        } catch (error) {
-            console.error("Error stopping serial reader:", error);
-            this.emitAppLog("warn", "Error stopping serial reader");
-        }
-
-        try {
-            if (this.port) {
-                await this.port.close();
-            }
-        } catch (error) {
-            console.error("Error closing serial port:", error);
-            this.emitAppLog("warn", "Error closing serial port");
-        } finally {
-            this.port = null;
-            await this.onPortDisconnected();
-            this.emitAppLog("info", "Serial port closed");
-            this.render();
-        }
+        await this.dataLink.disconnectPort(options);
     }
 
     async writeLine(text) {
-        if (!this.port?.writable) {
-            throw new Error("Serial port is not writable.");
-        }
-
-        const writer = this.port.writable.getWriter();
-        try {
-            const normalizedText = String(text).replace(/[\r\n]+$/, "");
-            console.log("Writing to serial port:", normalizedText);
-            this.emitAppLog("debug", `TX ${normalizedText}`);
-            await writer.write(this.encoder.encode(`${normalizedText}\r\n`));
-        } finally {
-            writer.releaseLock();
-        }
+        await this.dataLink.writeLine(text);
     }
 
-    async readLoop() {
-        if (!this.port?.readable) {
-            return;
-        }
-
-        let reader;
-        try {
-            reader = this.port.readable.getReader();
-            this.reader = reader;
-
-            while (this.keepReading) {
-                const { value, done } = await reader.read();
-                if (done) {
-                    break;
-                }
-
-                if (value) {
-                    this.pushChunk(value);
-                }
-            }
-        } catch (error) {
-            if (this.keepReading && this.isPortLostError(error)) {
-                await this.handlePortLost(error);
-            } else if (this.keepReading) {
-                console.error("Error while reading serial data:", error);
-                this.emitAppLog("error", "Error while reading serial data");
-            }
-        } finally {
-            try {
-                reader?.releaseLock();
-            } catch {
-                // ignore release errors during shutdown
-            }
-            if (this.reader === reader) {
-                this.reader = null;
-            }
-        }
-    }
-
-    pushChunk(chunk) {
-        this.readBuffer += this.decoder.decode(chunk, { stream: true });
-        const lines = this.readBuffer.split(/\r?\n/);
-        this.readBuffer = lines.pop() || "";
-
-        for (const line of lines) {
-            this.handleIncoming(line);
-        }
-    }
-
-    handleIncoming(textLine) {
-        this.counter++;
-        const handled = this.processIncomingLine(textLine);
-        if (!handled) {
-            console.log("Received unhandled line:", textLine);
-            this.messageEl.value = textLine;
-        }
-        this.statusLEDEl.setAttribute("counter", this.counter);
-        this.dispatchEvent(
-            new CustomEvent("serial-line", {
-                detail: {
-                    line: textLine,
-                    handled,
-                },
-                bubbles: true,
-                composed: true,
-            }),
-        );
-        this.render();
+    rememberCurrentPortHint(extra = {}) {
+        this.dataLink.rememberCurrentPortHint(extra);
     }
 
     render() {
         const statusLabel = this.getStatusLabel();
-        const autoEnabled = this.autoConnectEnabled || this.isAutoConnectRequested();
+        const status = this.dataLink.getPortStatus();
+        const autoEnabled = status.autoConnectEnabled;
+
         this.buttonLabelEl.textContent = this.getButtonLabelText();
         this.statusLEDEl.dataset.state = this.getStatusState();
         this.statusLEDEl.title = statusLabel;
         this.statusLEDEl.setAttribute("aria-label", statusLabel);
-        this.statusLEDEl.setAttribute("counter", this.counter);
+        this.statusLEDEl.setAttribute("counter", String(this.counter));
         this.autoIndicatorEl.dataset.enabled = autoEnabled ? "true" : "false";
         this.autoIndicatorEl.title = autoEnabled ? "Autoconnect enabled" : "Autoconnect disabled";
         this.afterRender();
     }
 }
 
-customElements.define("gc-serialport", GCSerialPort);
-export { GCSerialPort };
+export { GCLinkHost };

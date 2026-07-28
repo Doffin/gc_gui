@@ -1,14 +1,6 @@
-import { GCSerialPort } from "./gc-serialport.js";
+import { GCLinkHost } from "./gc-link-host.js";
 
-class GCDULink extends GCSerialPort {
-    static get observedAttributes() {
-        return ["title", "counter"];
-    }
-
-    isAutoConnectRequested() {
-        const value = this.getAttribute("autoconnect");
-        return value == null ? true : value !== "false";
-    }
+class GCDULink extends GCLinkHost {
 
     getExtraStyles() {
         return `
@@ -230,6 +222,8 @@ class GCDULink extends GCSerialPort {
 
     constructor() {
         super();
+      this.defaultAutoConnectRequested = true;
+      this.configureDataLinkFromAttributes();
         this.shadowRoot.getElementById("linkCard").classList.add("w3-quarter");
         this.expandCollapseButtonEl = this.shadowRoot.getElementById("expandCollapseButton");
         this.expandCollapseButtonEl.classList.remove("w3-hide");

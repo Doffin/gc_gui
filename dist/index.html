@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Groundcheck</title>
-    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
     <style>
         body {
             margin: 0;
@@ -17,7 +17,7 @@
             align-items: center;
             gap: 0.75rem;
             flex-wrap: nowrap;
-            overflow-x: auto;
+            overflow: visible;
         }
 
         .gc-topbar .gc-topbar-spacer {
@@ -26,6 +26,7 @@
             align-items: center;
             gap: 0.75rem;
             flex: 0 0 auto;
+            position: relative;
         }
 
         .gc-topbar .w3-bar-item {
@@ -48,9 +49,55 @@
             min-width: 8rem;
         }
 
-        .gc-topbar gc-gps-link {
-            flex: 0 0 auto;
-            align-self: center;
+        .gc-hidden-lang-select {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            border: 0;
+            padding: 0;
+            clip: rect(0 0 0 0);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .gc-lang-menu {
+            position: fixed;
+            min-width: 9rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+            padding: 0.35rem;
+            border: 1px solid #ccc;
+            border-radius: 0.35rem;
+            background: #fff;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.14);
+            z-index: 30;
+        }
+
+        .gc-lang-menu[hidden] {
+            display: none !important;
+        }
+
+        .gc-lang-menu-item {
+            width: 100%;
+            text-align: left;
+            padding: 0.35rem 0.5rem;
+            border: 0;
+            border-radius: 0.25rem;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .gc-lang-menu-item:hover,
+        .gc-lang-menu-item:focus-visible {
+            background: #f1f1f1;
+            outline: none;
+        }
+
+        .gc-lang-menu-item.is-active {
+            background: #e7f0fb;
+            font-weight: 600;
         }
 
         .gc-message-footer {
@@ -61,40 +108,53 @@
             width: min(96vw, 1200px);
             z-index: 20;
         }
+        .fa-battery-0 {
+            color:red;
+        }
+        .fa-battery-1 {
+            color:orangered;
+        }
+        .fa-battery-2 {
+            color:greenyellow;
+        }
+        .fa-battery-3 {
+            color:green;
+        }
     </style>
-  <script type="module" crossorigin src="/assets/index-m1lZIEzI.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-0xL-jKr8.css">
+  <script type="module" crossorigin src="/wc/assets/index-DnHQbxuu.js"></script>
+  <link rel="stylesheet" crossorigin href="/wc/assets/index-Bmc4zB8i.css">
 </head>
 
 <body>
-    <div class="w3-card w3-container w3-padding w3-border w3-round">
-        <div class="gc-topbar w3-bar w3-light-gray w3-border w3-round">
-            <div class="w3-bar-item w3-large">
-                <h1>Groundcheck</h1>
-            </div>
-            <div class="gc-topbar-spacer">
-                <select class="w3-select w3-bar-item" id="gcLangSelect" title="Language"></select>
-                <gc-gps-link class="w3-bar-item" id="gcGPSLink" title="GPS"></gc-gps-link>
-            </div>
+    <div class="gc-topbar w3-container w3-bar w3-light-gray w3-padding w3-border">
+        <div class="w3-bar-item w3-large">
+            <h1>Groundcheck</h1>
+        </div>
+        <div class="gc-topbar-spacer">
+            <button id="bleButton"><i id="bleIcon" style="font-size:18px;" class="fa">&#xf293;</i></button>
+            <button id="usbButton"><i id="usbIcon" style="font-size:18px;" class="fa">&#xf287;</i></button>
+            <button id="langButton"><i id="langIcon" style="font-size:18px" class="fa">&#xf0ac;</i></button>
+            <select class="w3-select w3-bar-item" id="gcLangSelect" title="Language"></select>
+            <i id="batteryIcon" class="fa fa-battery-0"></i>
         </div>
     </div>
-    <gc-du-link id="gcDULink" title="DU"></gc-du-link>
-    <div class="w3-card w3-container w3-padding w3-border w3-round w3-margin-top">
+
+    <div class="w3-container w3-padding">
         <div class="w3-row">
             <div class="w3-col w3-half">
                 <div class="w3-row">
-                    <div class="w3-col w3-card w3-round w3-border w3-left" style="width:55%; margin-right: 1rem;">
+                    <div class="w3-col w3-card w3-round w3-border w3-left w3-margin-top">
                         <gc-dataunit id="DataUnit" componentIdentifier="DataUnit" title="Test Data Unit">
                         </gc-dataunit>
                     </div>
-                    <div class="w3-col w3-card w3-round w3-border w3-right" style="width:40%;">
+                    <div class="w3-col w3-card w3-round w3-border w3-right w3-margin-top">
                         <gc-graph id="MeasurementGraph" componentIdentifier="MeasurementGraph"
                             title="Test Measurement Graph">
                         </gc-graph>
                     </div>
                 </div>
             </div>
-            <div class="w3-col w3-card w3-round w3-border" style="width:49%; margin-left: 1rem;">
+            <div class="w3-col w3-card w3-round w3-border w3-margin-top">
                 <gc-table id="MeasurementTable" componentIdentifier="MeasurementTable" title="Test Measurement Table">
                 </gc-table>
             </div>
@@ -103,11 +163,9 @@
             <gc-table id="SummaryTable" componentIdentifier="SummaryTable" title="Summary Table">
             </gc-table>
         </div>
-    </div>
-    <div class="w3-card w3-container w3-footer w3-padding w3-border w3-round w3-margin-top">
-        <div class="gc-message-footer w3-hide-small">
-            <gc-message-area id="gcMessageArea" max-entries="150"></gc-message-area>
-        </div>
+            <div class="gc-message-footer w3-hide-small">
+                <gc-message-area id="gcMessageArea" max-entries="150"></gc-message-area>
+            </div>
     </div>
 </body>
 

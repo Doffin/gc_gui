@@ -10,13 +10,13 @@
     },
     "DataUnit": {
         "title": "Jednostka danych",
-        "blankRows": 5,
-        "tableHeader": [
-            {"label": "Cel", "unit": "kPa", "tooltip": "Docelowe ciśnienie w kilopaskalach"},
-            {"label": "Ciśnienie", "unit": "kPa", "tooltip": "Obserwowane ciśnienie w kilopaskalach"},
-            {"label": "Osadzenie", "unit": "mm", "tooltip": "Odległość osadzenia w milimetrach"},
-            {"label": "Prędkość", "unit": "mm/min", "tooltip": "Prędkość osadzenia w milimetrach na minutę"},
-            {"label": "Czas", "unit": "hh:mm:ss", "tooltip": "Czas wykonania pomiaru"}
+        "properties": [
+            {"label": "Cel",       "key":"tp",  "unit": "kPa", "tooltip": "Docelowe ciśnienie w kilopaskalach"},
+            {"label": "Ciśnienie", "key":"p",   "unit": "kPa", "tooltip": "Obserwowane ciśnienie w kilopaskalach"},
+            {"label": "Force",     "key":"f",   "unit": "kN",  "tooltip": "Force in kilonewton"},
+            {"label": "Osadzenie", "key":"z",   "unit": "mm", "tooltip": "Odległość osadzenia w milimetrach"},
+            {"label": "Prędkość",  "key":"v",   "unit": "mm/min", "tooltip": "Prędkość osadzenia w milimetrach na minutę"},
+            {"label": "Czas",      "key":"t",   "unit": "hh:mm:ss", "tooltip": "Czas wykonania pomiaru"}
         ]
     },
     "MeasurementGraph": {

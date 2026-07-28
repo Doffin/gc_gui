@@ -1,14 +1,6 @@
-import { GCSerialPort } from "./gc-serialport.js";
+import { GCLinkHost } from "./gc-link-host.js";
 
-class GCGPSLink extends GCSerialPort {
-  static get observedAttributes() {
-    return ["title", "counter"];
-  }
-
-  isAutoConnectRequested() {
-        const value = this.getAttribute("autoconnect");
-        return value == null ? true : value !== "false";
-  }
+class GCGPSLink extends GCLinkHost {
 
   getExtraStyles() {
     return `
@@ -56,6 +48,8 @@ class GCGPSLink extends GCSerialPort {
 
   constructor() {
     super();
+    this.defaultAutoConnectRequested = true;
+    this.configureDataLinkFromAttributes();
     this.position = { latitude: null, longitude: null, altitude: null, fixQuality: null, numSatellites: null };
 
     this.titleEl?.classList.remove("w3-button", "w3-border", "w3-round", "w3-light-gray", "w3-hover-gray");

@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"name": "gc_gui",
+			"path": "../.."
+		},
+		{
+			"name": "icons",
+			"path": "../../../gc_test/gc_test/icons"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "gc_gui",
+		"liveServer.settings.port": 5501
+	}
+}

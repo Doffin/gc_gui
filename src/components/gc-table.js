@@ -42,23 +42,23 @@ template.innerHTML = `
 
   </style>
 
-  <div class="w3-container">
+  <div class="w3-container w3-margin-bottom">
     <div class="body">
-    <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Table</h2>
-    <table class="w3-table w3-hoverable my_table">
-        <thead id="tableHeader">
-        <tr id="tableHeaderRow"> </tr>
-            <!-- Header row will be dynamically added here -->
-        </thead>
-        <tbody id="tableBody">
-            <!-- Measurement rows will be dynamically added here -->
-        </tbody>
-    </table>
-
-    <slot></slot>
+        <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Table</h2>
+        <table class="w3-table w3-hoverable my_table">
+            <thead id="tableHeader">
+                <tr id="tableHeaderRow"> </tr>
+                <!-- Header row will be dynamically added here -->
+            </thead>
+            <tbody id="tableBody">
+                <!-- Measurement rows will be dynamically added here -->
+            </tbody>
+        </table>
+        <slot></slot>
     </div>
   </div>
 `;
+
 class GCTable extends HTMLElement {
     static get observedAttributes() {
         return ["title","componentIdentifier"];
@@ -129,10 +129,6 @@ class GCTable extends HTMLElement {
             // Let us add blank lines so we see something.
             this.initBlankLines(blankRows-this.getRowCount());
         }
-        // For some reason, this works for measurementstable and summarytable, but not the other two.
-        // We will have to update this to a Graph relevant function, but for now,
-        // we just make a small table with what will become xaxi and yaxis legend, units etc.
-        // Sould we also allow scrollbar policy to be defined? Maybe keep that in in the HTML code.
         
     }
     

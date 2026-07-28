@@ -1,9 +1,5 @@
-class GCDataLink extends HTMLElement {
-    static get observedAttributes() {
-        return ["autoconnect", "autoconnect-interval-ms"];
-    }
-
-    constructor() {
+class GcUsbLink extends EventTarget {
+    constructor(options = {}) {
         super();
         this.counter = 0;
         this.verbose = false;
@@ -17,20 +13,54 @@ class GCDataLink extends HTMLElement {
         this.autoConnectTimer = null;
         this.autoConnectEnabled = false;
         this.autoReconnectOnLoss = false;
+        this.autoConnectRequested = this.normalizeBooleanOption(options.autoconnect);
+        this.autoConnectIntervalMs = this.normalizeAutoConnectIntervalMs(options.autoconnectIntervalMs);
+        this.storageScope = options.storageScope || options.componentIdentifier || "default";
+        this.componentIdentifier = options.componentIdentifier || "GcUsbLink";
+        this.isMonitoring = false;
         this.linkState = "disconnected";
         this.onSerialDisconnect = this.onSerialDisconnect.bind(this);
-        this.observer = null;
+//        this.observer = null;
+        this.configure(options);
     }
 
-    async onPortConnected() {}
+    configure(options = {}) {
+        if (Object.prototype.hasOwnProperty.call(options, "autoconnect")) {
+            this.autoConnectRequested = this.normalizeBooleanOption(options.autoconnect);
+        }
 
-    async onPortDisconnected() {}
+        if (Object.prototype.hasOwnProperty.call(options, "autoconnectIntervalMs")) {
+            this.autoConnectIntervalMs = this.normalizeAutoConnectIntervalMs(options.autoconnectIntervalMs);
+        }
+
+        if (Object.prototype.hasOwnProperty.call(options, "storageScope")) {
+            this.storageScope = options.storageScope || "default";
+        }
+
+        if (Object.prototype.hasOwnProperty.call(options, "componentIdentifier")) {
+            this.componentIdentifier = options.componentIdentifier || "GcUsbLink";
+        }
+    }
+
+    normalizeBooleanOption(value) {
+        return value === true || value === "true" || value === 1;
+    }
+
+    normalizeAutoConnectIntervalMs(value) {
+        const parsed = Number.parseInt(String(value ?? "5000"), 10);
+        return Number.isFinite(parsed) && parsed >= 1000 ? parsed : 5000;
+    }
+
+    async onPortConnected() { }
+
+    async onPortDisconnected() { }
 
     emitAppLog(level, message, meta = {}) {
         this.dispatchEvent(
             new CustomEvent("app-log", {
                 detail: {
                     level,
+                    source: this.componentIdentifier || "GcUsbLink",
                     message,
                     ...meta,
                 },
@@ -57,36 +87,28 @@ class GCDataLink extends HTMLElement {
         }
 
         this.linkState = state;
-        if(this.observer!==null) {
-            this.observer.updateLinkState(state);
-        }
-        else {
-            this.dispatchEvent(
-                new CustomEvent("port-status-change", {
-                    detail: this.getPortStatus(),
-                    bubbles: true,
-                    composed: true,
-                }),
-            );
-        }   
+//        if (this.observer !== null) {
+//            this.observer.updateLinkState(state);
+//        }
+        this.dispatchEvent(
+            new CustomEvent("port-status-change", {
+                detail: this.getPortStatus(),
+                bubbles: true,
+                composed: true,
+            }),
+        );
     }
 
     isAutoConnectRequested() {
-        const value = this.getAttribute("autoconnect");
-        if (value == null) {
-            return false;
-        }
-
-        return value !== "false";
+        return this.autoConnectRequested;
     }
 
     getAutoConnectIntervalMs() {
-        const value = Number.parseInt(this.getAttribute("autoconnect-interval-ms") || "5000", 10);
-        return Number.isFinite(value) && value >= 1000 ? value : 5000;
+        return this.autoConnectIntervalMs;
     }
 
     getAutoConnectStorageScope() {
-        return `${this.tagName.toLowerCase()}:${this.id || "default"}`;
+        return this.storageScope || this.componentIdentifier || "default";
     }
 
     getRememberedPortStorageKey() {
@@ -172,8 +194,33 @@ class GCDataLink extends HTMLElement {
         }
     }
 
+    startMonitoring() {
+        if (this.isMonitoring) {
+            return;
+        }
+
+        navigator.serial?.addEventListener("disconnect", this.onSerialDisconnect);
+        this.isMonitoring = true;
+
+        if (this.isAutoConnectRequested() && !this.port) {
+            this.startAutoConnect();
+        } else {
+            this.updateLinkState(this.port ? "connected" : "disconnected");
+        }
+    }
+
+    stopMonitoring() {
+        if (!this.isMonitoring) {
+            return;
+        }
+
+        navigator.serial?.removeEventListener("disconnect", this.onSerialDisconnect);
+        this.isMonitoring = false;
+        this.stopAutoConnect();
+    }
+
     enableAutoConnect() {
-        this.setAttribute("autoconnect", "true");
+        this.autoConnectRequested = true;
         this.autoReconnectOnLoss = true;
 
         if (!this.port) {
@@ -182,34 +229,9 @@ class GCDataLink extends HTMLElement {
     }
 
     disableAutoConnect() {
-        this.setAttribute("autoconnect", "false");
+        this.autoConnectRequested = false;
         this.autoReconnectOnLoss = false;
         this.stopAutoConnect();
-    }
-
-    connectedCallback() {
-        navigator.serial?.addEventListener("disconnect", this.onSerialDisconnect);
-        if (this.isAutoConnectRequested()) {
-            this.startAutoConnect();
-        } else {
-            this.updateLinkState(this.port ? "connected" : "disconnected");
-        }
-    }
-
-    disconnectedCallback() {
-        navigator.serial?.removeEventListener("disconnect", this.onSerialDisconnect);
-        this.stopAutoConnect();
-        this.disconnectPort();
-    }
-
-    attributeChangedCallback(name) {
-        if (name === "autoconnect") {
-            if (this.isAutoConnectRequested()) {
-                this.enableAutoConnect();
-            } else {
-                this.disableAutoConnect();
-            }
-        }
     }
 
     isPortLostError(error) {
@@ -407,11 +429,15 @@ class GCDataLink extends HTMLElement {
 
     handleIncoming(textLine) {
         this.counter++;
-        if(this.observer!==null) {
-            this.observer.processIncomingLine(textLine);
-        }
+        this.dispatchEvent(
+            new CustomEvent("serial-line", {
+                detail: { line: textLine, counter: this.counter },
+                bubbles: true,
+                composed: true,
+            }),
+        );  
+
+        this.emitAppLog("debug", `RX ${textLine}`);
     }
 }
-
-customElements.define("gc-datalink", GCDataLink);
-export { GCDataLink };
+export { GcUsbLink };

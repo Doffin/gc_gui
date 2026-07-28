@@ -43,22 +43,21 @@ template.innerHTML = `
 
   </style>
 
-  <div class="w3-container">
-    <div class="body">
-    <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Graph</h2>
-    <table class="w3-table w3-hoverable my_table">
-        <thead id="tableHeader">
-        <tr id="tableHeaderRow"> </tr>
-            <!-- Header row will be dynamically added here -->
-        </thead>
-        <tbody id="tableBody">
-            <!-- Measurement rows will be dynamically added here -->
-        </tbody>
-    </table>
-
-    <slot></slot>
+    <div class="w3-container w3-margin-bottom">
+        <div class="body">
+            <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Graph</h2>
+            <table class="w3-table w3-hoverable my_table">
+            <thead id="tableHeader">
+            <tr id="tableHeaderRow"> </tr>
+                <!-- Header row will be dynamically added here -->
+            </thead>
+            <tbody id="tableBody">
+                <!-- Measurement rows will be dynamically added here -->
+            </tbody>
+            </table>
+            <slot></slot>
+        </div>
     </div>
-  </div>
 `;
 class GCGraph extends HTMLElement {
     static get observedAttributes() {
