@@ -122,6 +122,11 @@
         .fa-battery-3 {
             color:green;
         }
+
+        .gc-column {
+            padding-left: 4px;
+            padding-right: 4px;
+        }
     </style>
 </head>
 
@@ -139,33 +144,34 @@
         </div>
     </div>
 
-    <div class="w3-container w3-padding">
+    <div class="w3-container">
         <div class="w3-row">
-            <div class="w3-col w3-half">
-                <div class="w3-row">
-                    <div class="w3-col w3-card w3-round w3-border w3-left w3-margin-top">
-                        <gc-dataunit id="DataUnit" componentIdentifier="DataUnit" title="Test Data Unit">
-                        </gc-dataunit>
-                    </div>
-                    <div class="w3-col w3-card w3-round w3-border w3-right w3-margin-top">
-                        <gc-graph id="MeasurementGraph" componentIdentifier="MeasurementGraph"
+            <div class="w3-col m6 l4 gc-column">
+                <div class="w3-col w3-card w3-round w3-border w3-left w3-margin-top">
+                   <gc-procedure-bar></gc-procedure-bar>
+                    <gc-dataunit id="DataUnit" componentIdentifier="DataUnit" title="Test Data Unit">
+                    </gc-dataunit>
+                </div>
+            </div>
+            <div class="w3-col m6 l8 gc-column">
+                <div class="w3-col w3-card w3-round w3-border w3-right w3-margin-top">
+                   <gc-graph id="MeasurementGraph" componentIdentifier="MeasurementGraph"
                             title="Test Measurement Graph">
-                        </gc-graph>
-                    </div>
+                    </gc-graph>
                 </div>
             </div>
             <div class="w3-col w3-card w3-round w3-border w3-margin-top">
-                <gc-table id="MeasurementTable" componentIdentifier="MeasurementTable" title="Test Measurement Table">
-                </gc-table>
+                <gc-measurements-table id="MeasurementTable" componentIdentifier="MeasurementTable" title="Test Measurement Table">
+                </gc-measurements-table>
             </div>
         </div>
         <div class="w3-col w3-card w3-round w3-border" style="margin-top: 1rem;">
             <gc-table id="SummaryTable" componentIdentifier="SummaryTable" title="Summary Table">
             </gc-table>
         </div>
-            <div class="gc-message-footer w3-hide-small">
-                <gc-message-area id="gcMessageArea" max-entries="150"></gc-message-area>
-            </div>
+        <div class="gc-message-footer w3-hide-small">
+            <gc-message-area id="gcMessageArea" max-entries="150"></gc-message-area>
+        </div>
     </div>
     <script type="module" src="/src/main.js"></script>
 </body>

@@ -22,6 +22,7 @@ class GcBleLink extends EventTarget {
 
         this.onGattDisconnected = this.onGattDisconnected.bind(this);
         this.onCharacteristicValueChanged = this.onCharacteristicValueChanged.bind(this);
+        this.onSendCommandEvent = this.onSendCommandEvent.bind(this);
     }
 
     configure(options = {}) {
@@ -34,11 +35,64 @@ class GcBleLink extends EventTarget {
     }
 
     startMonitoring() {
-        // BLE disconnects are tracked via GATT disconnect events while connected.
+        if (typeof document !== "undefined") {
+            document.addEventListener("gc-send-cmd", this.onSendCommandEvent);
+        }
     }
 
     stopMonitoring() {
-        // No periodic monitor is required for BLE transport.
+        if (typeof document !== "undefined") {
+            document.removeEventListener("gc-send-cmd", this.onSendCommandEvent);
+        }
+    }
+/*
+    matchesSendCommandTarget(detail) {
+        if (!detail || typeof detail !== "object") {
+            return true;
+        }
+
+        const scopedIdentifier = detail.componentIdentifier;
+        if (scopedIdentifier && scopedIdentifier !== this.componentIdentifier) {
+            return false;
+        }
+
+        const rawTarget = detail.target ?? detail.transport ?? "any";
+        const target = String(rawTarget).trim().toLowerCase();
+        if (!target || target === "any" || target === "all" || target === "both") {
+            return true;
+        }
+
+        if (target === "ble" || target === "bluetooth") {
+            return true;
+        }
+
+        return target === String(this.componentIdentifier || "").trim().toLowerCase();
+    }
+*/
+    onSendCommandEvent(event) {
+        const detail = event?.detail;
+        const textLine = typeof detail === "string" ? detail : detail?.textLine;
+        if (typeof textLine !== "string" || !textLine.trim()) {
+            return;
+        }
+/*
+        if (!this.matchesSendCommandTarget(detail)) {
+            return;
+        }
+*/
+        if (!this.isConnected()) {
+            this.emitAppLog("warn", "Ignoring gc-send-cmd: BLE link is not connected", {
+                command: textLine,
+            });
+            return;
+        }
+
+        this.writeLine(textLine).catch((error) => {
+            this.emitAppLog("error", "Failed to send gc-send-cmd over BLE", {
+                command: textLine,
+                error: String(error?.message || error),
+            });
+        });
     }
 
     rememberCurrentPortHint() {

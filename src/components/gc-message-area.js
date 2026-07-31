@@ -8,6 +8,12 @@ class GCMessageArea extends HTMLElement {
     this.activeLevels = new Set(["debug", "info", "warn", "error"]);
     this.filtersLoaded = false;
     this.onLogEvent = this.onLogEvent.bind(this);
+    this.renderFrameId = null;
+    this.hasPendingRender = false;
+    this.fullRenderRequested = false;
+    this.pendingEntries = [];
+    this.pendingRemovedVisibleCount = 0;
+    this.displayedEntries = [];
 
     const root = this.attachShadow({ mode: "open" });
     root.innerHTML = `
@@ -171,7 +177,10 @@ class GCMessageArea extends HTMLElement {
     this.clearButtonEl.addEventListener("click", () => {
       this.entries = [];
       this.bufferedEntries = [];
-      this.render();
+      this.pendingEntries = [];
+      this.pendingRemovedVisibleCount = 0;
+      this.displayedEntries = [];
+      this.requestRender(true);
     });
 
     this.freezeButtonEl.addEventListener("click", () => {
@@ -181,7 +190,7 @@ class GCMessageArea extends HTMLElement {
         this.bufferedEntries = [];
         this.trimToMaxEntries();
       }
-      this.render();
+      this.requestRender(true);
     });
 
     this.filterButtons.forEach((button) => {
@@ -198,7 +207,7 @@ class GCMessageArea extends HTMLElement {
         }
 
         this.saveFilterState();
-        this.render();
+        this.requestRender(true);
       });
     });
   }
@@ -206,11 +215,16 @@ class GCMessageArea extends HTMLElement {
   connectedCallback() {
     document.addEventListener("app-log", this.onLogEvent);
     this.loadFilterState();
-    this.render();
+    this.renderFull();
   }
 
   disconnectedCallback() {
     document.removeEventListener("app-log", this.onLogEvent);
+    if (this.renderFrameId !== null) {
+      cancelAnimationFrame(this.renderFrameId);
+      this.renderFrameId = null;
+      this.hasPendingRender = false;
+    }
   }
 
   onLogEvent(event) {
@@ -223,19 +237,57 @@ class GCMessageArea extends HTMLElement {
     };
     if (this.isFrozen) {
       this.bufferedEntries.push(entry);
-      this.updateHeaderState();
+      this.requestRender();
       return;
     }
 
     this.entries.push(entry);
-    this.trimToMaxEntries();
-    this.render();
+    this.pendingEntries.push(entry);
+    const removedEntries = this.trimToMaxEntries();
+    if (removedEntries.length > 0) {
+      let removedVisibleCount = 0;
+      removedEntries.forEach((removedEntry) => {
+        if (this.activeLevels.has(String(removedEntry.level).toLowerCase())) {
+          removedVisibleCount += 1;
+        }
+      });
+      this.pendingRemovedVisibleCount += removedVisibleCount;
+    }
+    this.requestRender();
+  }
+
+  requestRender(fullRender = false) {
+    if (fullRender) {
+      this.fullRenderRequested = true;
+    }
+
+    if (this.hasPendingRender) {
+      return;
+    }
+
+    this.hasPendingRender = true;
+    this.renderFrameId = requestAnimationFrame(() => {
+      this.hasPendingRender = false;
+      this.renderFrameId = null;
+
+      if (this.fullRenderRequested) {
+        this.fullRenderRequested = false;
+        this.pendingEntries = [];
+        this.pendingRemovedVisibleCount = 0;
+        this.renderFull();
+        return;
+      }
+
+      this.renderIncremental();
+    });
   }
 
   trimToMaxEntries() {
     if (this.entries.length > this.maxEntries) {
-      this.entries.splice(0, this.entries.length - this.maxEntries);
+      return this.entries.splice(0, this.entries.length - this.maxEntries);
     }
+
+    return [];
   }
 
   getFilterStorageKey() {
@@ -275,7 +327,7 @@ class GCMessageArea extends HTMLElement {
     }
   }
 
-  render() {
+  renderFull() {
     const filteredEntries = this.entries.filter((entry) => this.activeLevels.has(String(entry.level).toLowerCase()));
     this.updateHeaderState(filteredEntries.length);
 
@@ -285,24 +337,72 @@ class GCMessageArea extends HTMLElement {
       button.dataset.active = isActive ? "true" : "false";
     });
 
-    this.logListEl.innerHTML = filteredEntries
-      .map((entry) => {
-        const levelClass = String(entry.level).toLowerCase();
-        const safeLevel = this.escapeHtml(String(entry.level).toUpperCase());
-        const safeTime = this.escapeHtml(entry.time);
-        const safeMessage = this.escapeHtml(`[${entry.source}] ${entry.message}`);
+    const fragment = document.createDocumentFragment();
+    filteredEntries.forEach((entry) => {
+      fragment.appendChild(this.createEntryElement(entry));
+    });
 
-        return `
-          <li class="entry">
-            <span class="time">${safeTime}</span>
-            <span class="level ${levelClass}">${safeLevel}</span>
-            <span class="message">${safeMessage}</span>
-          </li>
-        `;
-      })
-      .join("");
+    this.logListEl.replaceChildren(fragment);
+    this.displayedEntries = filteredEntries.slice();
 
-    this.logListEl.scrollTop = this.logListEl.scrollHeight;
+    this.logListEl.scrollTop = Number.MAX_SAFE_INTEGER;
+  }
+
+  renderIncremental() {
+    let didChangeList = false;
+
+    if (this.pendingRemovedVisibleCount > 0) {
+      let toRemove = this.pendingRemovedVisibleCount;
+      while (toRemove > 0 && this.logListEl.firstElementChild) {
+        this.logListEl.removeChild(this.logListEl.firstElementChild);
+        this.displayedEntries.shift();
+        toRemove -= 1;
+      }
+      this.pendingRemovedVisibleCount = 0;
+      didChangeList = true;
+    }
+
+    if (this.pendingEntries.length > 0) {
+      const entriesToAppend = this.pendingEntries;
+      this.pendingEntries = [];
+
+      const fragment = document.createDocumentFragment();
+      entriesToAppend.forEach((entry) => {
+        if (!this.activeLevels.has(String(entry.level).toLowerCase())) {
+          return;
+        }
+
+        this.displayedEntries.push(entry);
+        fragment.appendChild(this.createEntryElement(entry));
+      });
+
+      if (fragment.childNodes.length > 0) {
+        this.logListEl.appendChild(fragment);
+        didChangeList = true;
+      }
+    }
+
+    this.updateHeaderState(this.displayedEntries.length);
+    if (didChangeList) {
+      this.logListEl.scrollTop = Number.MAX_SAFE_INTEGER;
+    }
+  }
+
+  createEntryElement(entry) {
+    const levelClass = String(entry.level).toLowerCase();
+    const safeLevel = this.escapeHtml(String(entry.level).toUpperCase());
+    const safeTime = this.escapeHtml(entry.time);
+    const safeMessage = this.escapeHtml(`[${entry.source}] ${entry.message}`);
+
+    const listItem = document.createElement("li");
+    listItem.className = "entry";
+    listItem.innerHTML = `
+      <span class="time">${safeTime}</span>
+      <span class="level ${levelClass}">${safeLevel}</span>
+      <span class="message">${safeMessage}</span>
+    `;
+
+    return listItem;
   }
 
   updateHeaderState(filteredCount = null) {

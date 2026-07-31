@@ -1,0 +1,241 @@
+{
+  "title": "TDOK 2014:0141 Version 1.0",
+  "description": "TDOK 2014:0141 Version 1.0 - Swedish test procedure for plate load test",
+  "description2": "For kvart punkt blir det registrert automatisk måling om setning ikkje overstig 0,02mm setning i minuttet målt kontinuerlig ( fordelt på sekund )  MEN MERKET MED RODT SKAL ALLTID TID GJELDE",
+  "tip": "Two loading cycles with stability criteria monitoring",
+  "headers": ["#", "Fase", "σ (kPa)", "Kraft (kN)", "Ca. tonn", "Hold (s)", "Setningshastighet (mm/min)", "Fasekode"],
+  "controllerConfig": {
+    "pressureTolerance_pct": 1.0,
+    "pressureToleranceMin_kPa": 0.2,
+    "forceTolerance_kN": 0.2,
+    "hydraulicStiffness_N_per_m": 100000000
+  },
+  "plateDiameter_mm": 300,
+  "plateDiameterOptions": [300, 600, 762],
+  "procedureDocument": { "label": "Testprosedyre", "url": "doc\\TDOK_2014-0141.pdf", "tip": "Last opp dokument som beskriver testprosedyren" },
+  "content": [
+    {
+      "step": 0,
+      "phase": "Tare",
+      "comment": "Nullstilling av sensor",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 0, "message": "Moving to 0 kPa..." },
+        { "action": "stop_pump", "message": "Pump stopped" },
+        { "action": "send_command", "command": "tare", "message": "Tare: Resetting force sensor..." },
+        { "action": "wait", "duration_s": 1, "message": "Waiting 1s after tare..." }
+      ]
+    },
+    {
+      "step": 1,
+      "phase": "Forbelastning",
+      "comment": "Nullpunkt",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 10, "message": "Ramping to 10 kPa preload..." },
+        { "action": "stop_pump", "message": "Preload reached, pump stopped" },
+        { "action": "wait", "duration_s": 30, "message": "Waiting 30s for ground to settle" },
+        { "action": "send_command", "command": "s=0", "message": "Resetting settling probe (s=0)..." },
+        { "action": "wait", "duration_s": 2, "message": "Preload ready for next step" }
+      ]
+    },
+    {
+      "step": 2,
+      "phase": "Pålasting Ev1",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 80, "message": "Loading to 80 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 3,
+      "phase": "Pålasting Ev1",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 160, "message": "Loading to 160 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 4,
+      "phase": "Pålasting Ev1",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 240, "message": "Loading to 240 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 5,
+      "phase": "Pålasting Ev1",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 320, "message": "Loading to 320 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 6,
+      "phase": "Pålasting Ev1",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 400, "message": "Loading to 400 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 7,
+      "phase": "Pålasting Ev1",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 450, "message": "Loading to 450 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 8,
+      "phase": "Pålasting Ev1",
+      "comment": "Maks Ev1",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 500, "message": "Loading to 500 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 9,
+      "phase": "Avlasting Ev1",
+      "comment": "",
+      "controllerConfig": {
+        "pressureTolerance_pct": 3.0,
+        "pressureToleranceMin_kPa": 0.8
+      },
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 250, "message": "Unloading to 250 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 10,
+      "phase": "Avlasting Ev1",
+      "comment": "",
+      "controllerConfig": {
+        "pressureTolerance_pct": 3.0,
+        "pressureToleranceMin_kPa": 0.8
+      },
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 125, "message": "Unloading to 125 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 11,
+      "phase": "Avlasting Ev1",
+      "comment": "",
+      "controllerConfig": {
+        "pressureTolerance_pct": 4.0,
+        "pressureToleranceMin_kPa": 0.8
+      },
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 10, "message": "Unloading to 10 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 12,
+      "phase": "Pålasting Ev2",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 80, "message": "Ev2: Loading to 80 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 13,
+      "phase": "Pålasting Ev2",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 160, "message": "Ev2: Loading to 160 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 14,
+      "phase": "Pålasting Ev2",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 240, "message": "Ev2: Loading to 240 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 15,
+      "phase": "Pålasting Ev2",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 320, "message": "Ev2: Loading to 320 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 16,
+      "phase": "Pålasting Ev2",
+      "comment": "",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 400, "message": "Ev2: Loading to 400 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 17,
+      "phase": "Pålasting Ev2",
+      "comment": "Maks Ev2",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 450, "message": "Ev2: Loading to 450 kPa..." },
+        { "action": "stop_pump", "message": "Target pressure reached, pump stopped" },
+        { "action": "wait", "duration_s": 20, "message": "Waiting 20s before measuring settling speed" },
+        { "action": "evaluate_settling_speed", "duration_s": 10, "max_mm_min": 0.02, "message": "Measuring settling speed" }
+      ]
+    },
+    {
+      "step": 18,
+      "phase": "Reset",
+      "comment": "Test ferdig, nullstilling av sensor",
+      "sequence": [
+        { "action": "move_to_pressure", "target_kPa": 0, "message": "Unloading to 0 kPa..." },
+        { "action": "stop_pump", "message": "Pump stopped" },
+        { "action": "wait", "duration_s": 2, "message": "Resting 2s..." },
+        { "action": "send_command", "command": "tare", "message": "Tare: Resetting force sensor for next test" }
+      ]
+    }
+  ]
+}
+

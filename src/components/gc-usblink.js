@@ -20,7 +20,7 @@ class GcUsbLink extends EventTarget {
         this.isMonitoring = false;
         this.linkState = "disconnected";
         this.onSerialDisconnect = this.onSerialDisconnect.bind(this);
-//        this.observer = null;
+        this.onSendCommandEvent = this.onSendCommandEvent.bind(this);
         this.configure(options);
     }
 
@@ -87,9 +87,6 @@ class GcUsbLink extends EventTarget {
         }
 
         this.linkState = state;
-//        if (this.observer !== null) {
-//            this.observer.updateLinkState(state);
-//        }
         this.dispatchEvent(
             new CustomEvent("port-status-change", {
                 detail: this.getPortStatus(),
@@ -200,6 +197,9 @@ class GcUsbLink extends EventTarget {
         }
 
         navigator.serial?.addEventListener("disconnect", this.onSerialDisconnect);
+        if (typeof document !== "undefined") {
+            document.addEventListener("gc-send-cmd", this.onSendCommandEvent);
+        }
         this.isMonitoring = true;
 
         if (this.isAutoConnectRequested() && !this.port) {
@@ -215,8 +215,28 @@ class GcUsbLink extends EventTarget {
         }
 
         navigator.serial?.removeEventListener("disconnect", this.onSerialDisconnect);
+        if (typeof document !== "undefined") {
+            document.removeEventListener("gc-send-cmd", this.onSendCommandEvent);
+        }
         this.isMonitoring = false;
         this.stopAutoConnect();
+    }
+
+    onSendCommandEvent(event) {
+        const detail = event?.detail;
+        const textLine = typeof detail === "string" ? detail : detail?.textLine;
+        if (this.linkState !== "connected" || !this.port?.writable) {
+            this.emitAppLog("warn", "Ignoring gc-send-cmd: USB link is not connected", {
+                command: textLine,
+            });
+            return;
+        }
+        this.writeLine(textLine).catch((error) => {
+            this.emitAppLog("error", "Failed to send gc-send-cmd over USB", {
+                command: textLine,
+                error: String(error?.message || error),
+            });
+        });
     }
 
     enableAutoConnect() {
@@ -436,8 +456,10 @@ class GcUsbLink extends EventTarget {
                 composed: true,
             }),
         );  
-
-        this.emitAppLog("debug", `RX ${textLine}`);
+        const normalizedLine = String(textLine || "").trim();
+        if (!normalizedLine.startsWith("$F,")) {
+            this.emitAppLog("debug", `RX ${normalizedLine}`);
+        }
     }
 }
 export { GcUsbLink };

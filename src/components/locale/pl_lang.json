@@ -2,11 +2,8 @@
     "i18n": {
         "pl": "Polski"
     },
-    "GCDULink": {
-        "pressure": {"elementId": "pressureLabel", "unitElementId": "pressureUnit", "label": "Ciśnienie", "unit": "kPa","tooltip": "Ciśnienie w układzie hydraulicznym"},
-        "force": {"elementId": "forceLabel", "unitElementId": "forceUnit", "label": "Siła", "unit": "kN","tooltip": "Siła działająca w układzie hydraulicznym"},
-        "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Odległość", "unit": "mm","tooltip": "Odległość mierzona przez czujnik"},
-        "pumpState": {"elementId": "pumpStateLabel", "label": "Stan pompy","tooltip": "Aktualny stan pompy"}
+    "ProcedureBar": {
+        "title": "Testu:"
     },
     "DataUnit": {
         "title": "Jednostka danych",

@@ -1,6 +1,10 @@
 import "./components/gc-message-area.js";
 import "./components/gc-table.js";
+import "./components/gc-realtime.js";
+import "./components/gc-measurements-table.js";
 import "./components/gc-dataunit.js";
+import "./components/gc-pump-control.js";
+import "./components/gc-procedure-bar.js";
 import "./components/gc-graph.js";
 import "./components/gc-usblink.js";
 import "./components/gc-blelink.js";

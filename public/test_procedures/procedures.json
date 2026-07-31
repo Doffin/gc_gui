@@ -1,0 +1,8 @@
+{
+    "factoryDefault": "R211_2.2.4.json",
+    "options":[
+        {"label": "R211 2.2.4", "fileName": "R211_2.2.4.json"},
+        {"label": "DIN 1834 2012-04", "fileName": "DIN_1834_2012_04.json"},
+        {"label": "TDOK 2014:0141 v1.0", "fileName": "TDOK_2014_0141_v1.0.json"}
+    ]
+}

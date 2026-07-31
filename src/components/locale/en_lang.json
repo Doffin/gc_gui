@@ -2,11 +2,8 @@
     "i18n": {
         "en": "English"
     },
-    "GCDULink": {
-        "pressure": {"elementId": "pressureLabel", "unitElementId": "pressureUnit", "label": "Pressure", "unit": "kPa","tooltip": "Pressure in the hydraulic system"},
-        "force": {"elementId": "forceLabel", "unitElementId": "forceUnit", "label": "Force", "unit": "kN","tooltip": "Force applied by the hydraulic system"},
-        "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Distance", "unit": "mm","tooltip": "Distance measured by the sensor"},
-        "pumpState": {"elementId": "pumpStateLabel", "label": "Pump State","tooltip": "Current state of the pump"}
+    "ProcedureBar": {
+        "title": "Test:"
     },
     "DataUnit": {
         "title": "Data Unit",
@@ -32,8 +29,8 @@
         "tableHeader": [
             {"label": "Step", "tooltip": "Step number"},
             {"label": "Phase", "tooltip": "Phase"},
-            {"label": "Aim Pressure", "unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
-            {"label": "Pressure", "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
+            {"label": "Target Pressure", "unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
+            {"label": "Peak Pressure", "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
             {"label": "Settling", "unit": "mm", "tooltip": "Settling distance in millimeters"},
             {"label": "Speed", "unit": "mm/min", "tooltip": "Settling speed in millimeters per minute"},
             {"label": "Time", "unit": "hh:mm:ss", "tooltip": "When measurement was taken"},

@@ -87,7 +87,6 @@ class GCTable extends HTMLElement {
             this.appendRowToTable(new Array(getNumberOfColumns).fill(""));
         }
     }
-
     attributeChangedCallback() {
         this.componentIdentifier = this.getAttribute("componentIdentifier") || "MeasurementTable";
         this.render();
@@ -182,6 +181,26 @@ class GCTable extends HTMLElement {
         });
     }
 
+    updateRowData(rowIndex, rowData) {
+        const tableBody = this.shadowRoot.getElementById("tableBody");
+        let rowToEdit = null;
+        if (rowIndex >= 0 && rowIndex < tableBody.rows.length) {
+            rowToEdit = tableBody.rows[rowIndex];
+        }
+        if(rowToEdit == null) return;
+        let i=0;
+        rowData.forEach(element => {
+            rowToEdit.children[i++].textContent = element;
+        });
+    }
+
+    getTableRow(rowIndex) {
+        const tableBody = this.shadowRoot.getElementById("tableBody");
+        if (rowIndex >= 0 && rowIndex < tableBody.rows.length) {
+            return tableBody.rows[rowIndex];
+        }
+        return null;
+    }
     appendRowToTable(rowData) {
         const tableBody = this.shadowRoot.getElementById("tableBody");
         const newRow = document.createElement("tr");

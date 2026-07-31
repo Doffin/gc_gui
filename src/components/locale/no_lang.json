@@ -2,11 +2,8 @@
     "i18n": {
         "no": "Norsk"
     },
-    "GCDULink": {
-        "pressure": {"elementId": "pressureLabel", "unitElementId": "pressureUnit", "label": "Trykk", "unit": "kPa","tooltip": "Trykk i det hydrauliske systemet"},
-        "force": {"elementId": "forceLabel", "unitElementId": "forceUnit", "label": "Kraft", "unit": "kN","tooltip": "Kraft som påføres av det hydrauliske systemet"},
-        "distance": {"elementId": "distanceLabel", "unitElementId": "distanceUnit", "label": "Avstand", "unit": "mm","tooltip": "Avstand målt av sensoren"},
-        "pumpState": {"elementId": "pumpStateLabel", "label": "Pumpetilstand","tooltip": "Nåværende tilstand til pumpen"}
+    "ProcedureBar": {
+        "title": "Test:"
     },
     "DataUnit": {
         "title": "Datamodul",
