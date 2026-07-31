@@ -8,12 +8,12 @@
     "DataUnit": {
         "title": "Jednostka danych",
         "properties": [
-            {"label": "Cel",       "key":"tp",  "unit": "kPa", "tooltip": "Docelowe ciśnienie w kilopaskalach"},
-            {"label": "Ciśnienie", "key":"p",   "unit": "kPa", "tooltip": "Obserwowane ciśnienie w kilopaskalach"},
-            {"label": "Force",     "key":"f",   "unit": "kN",  "tooltip": "Force in kilonewton"},
-            {"label": "Osadzenie", "key":"z",   "unit": "mm", "tooltip": "Odległość osadzenia w milimetrach"},
-            {"label": "Prędkość",  "key":"v",   "unit": "mm/min", "tooltip": "Prędkość osadzenia w milimetrach na minutę"},
-            {"label": "Czas",      "key":"t",   "unit": "hh:mm:ss", "tooltip": "Czas wykonania pomiaru"}
+            {"label": "Cel",       "key":"targetPressure",  "unit": "kPa", "tooltip": "Docelowe ciśnienie w kilopaskalach"},
+            {"label": "Ciśnienie", "key":"pressure",   "unit": "kPa", "tooltip": "Obserwowane ciśnienie w kilopaskalach"},
+            {"label": "Force",     "key":"force",   "unit": "kN",  "tooltip": "Force in kilonewton"},
+            {"label": "Osadzenie", "key":"distance",   "unit": "mm", "tooltip": "Odległość osadzenia w milimetrach"},
+            {"label": "Prędkość",  "key":"velocity",   "unit": "mm/min", "tooltip": "Prędkość osadzenia w milimetrach na minutę"},
+            {"label": "Czas",      "key":"hhmmss",   "unit": "hh:mm:ss", "tooltip": "Czas wykonania pomiaru"}
         ]
     },
     "MeasurementGraph": {

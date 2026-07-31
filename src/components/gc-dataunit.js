@@ -101,6 +101,7 @@ template.innerHTML = `
    
   <div class="w3-container w3-margin-bottom">
     <div class="body">
+        <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Table</h2>
         <div class="w3-container w3-padding">
         <gc-realtime id="targetPressure" label="Target Pressure" value=0.0 unit="kPa" decimals=1 componentIdentifier="targetPressure"></gc-realtime>
         <gc-realtime id="pressure" label="Pressure" value=0.0 unit="kPa" decimals=1 componentIdentifier="pressure"></gc-realtime>
@@ -195,9 +196,6 @@ class GCDataUnit extends HTMLElement {
         testResult.passed = false;        // Is ground speed below threshold
 
         this.testResult = testResult;
-        this.deltaPressure = 0;
-        this.currentPressure = 0;
-        this.currentTarget = 0;
         this.velocity = 0.0;
         this.vMax = 0.02;
         this.secondsElapsed = 0;
@@ -205,11 +203,11 @@ class GCDataUnit extends HTMLElement {
         this.nextStateMachineUpdate = Date.now() + 1000;
         this.secondsPause = 0;
 
-        this.nyTargetPressureElement = root.getElementById("targetPressure");
-        this.nyPressureElement = root.getElementById("pressure");
-        this.nyForceElement = root.getElementById("force");
-        this.nyDistanceElement = root.getElementById("distance");
-        this.nyVelocityElement = root.getElementById("velocity");
+        this.targetPressureElement = root.getElementById("targetPressure");
+        this.pressureElement = root.getElementById("pressure");
+        this.forceElement = root.getElementById("force");
+        this.distanceElement = root.getElementById("distance");
+        this.velocityElement = root.getElementById("velocity");
         this.pumpControlElement = root.getElementById("pumpControl");
 
         // Temporarily used to set targetPressure, will be removed....
@@ -369,7 +367,6 @@ class GCDataUnit extends HTMLElement {
             case Phases.EVALUATE_Z_SPEED:
                 this.testResult.velocity = this.velocity;
                 this.testResult.dt = this.secondsElapsed;
-//                if(this.currentPressure>this.testResult.pressure)this.testResult.pressure= this.currentPressure;
                 mess = `EVAL v = ${this.velocity.toFixed(3)} mm/min [${this.secondsElapsed}/${this.tMax}]`;
                 this.message.textContent = mess;
                 if (Math.abs(this.velocity) < this.vMax)
@@ -385,7 +382,7 @@ class GCDataUnit extends HTMLElement {
                 this.testResult.passed = true;
                 this.emitTestMeasurement("new-measurement", this.testResult);
                 console.log(this.testResult);
-                mess = `PASS v = ${this.velocity.toFixed(3)} < ${this.vMax} mm/min after ${this.secondsElapsed} s`;
+                mess = `PASS ${this.velocity.toFixed(3)} < ${this.vMax} mm/min after ${this.secondsElapsed} s`;
                 this.message.textContent = mess;
                 this.phase = Phases.TEST_COMPLETED;
                 this.secondsPause = 4;
@@ -397,7 +394,7 @@ class GCDataUnit extends HTMLElement {
                 this.testResult.passed = false;
                 this.emitTestMeasurement("new-measurement", this.testResult);
                 console.log(this.testResult);
-                mess = `FAIL v = ${this.velocity.toFixed(3)} > ${this.vMax} mm/min after ${this.secondsElapsed} s`;
+                mess = `FAIL ${this.velocity.toFixed(3)} > ${this.vMax} mm/min after ${this.secondsElapsed} s`;
                 this.message.textContent = mess;
                 this.phase = Phases.TEST_COMPLETED;
                 this.secondsPause = 4;
@@ -419,16 +416,15 @@ class GCDataUnit extends HTMLElement {
             // $F,h:0,f:1492,z:7986
             let fast = this.getJsObject(textLine, false);
             if (fast === null) return;
-            //this.deltaPressure = (this.targetPressure - this.currentPressure);
             let pressure = (fast.p / 100.0);
             let force = (fast.f / 100.0);
             let distance = (fast.z / 1000.0);
-            this.nyPressureElement.value = pressure;
-            this.nyForceElement.value = force;
-            this.nyDistanceElement.value = distance;
+            this.pressureElement.value = pressure;
+            this.forceElement.value = force;
+            this.distanceElement.value = distance;
             let now = Date.now();
             if (now - this.history[0].t >= 500.0) { // add to history at 2Hz                
-                this.nyVelocityElement.value = this.addNewDistanceToHistory(distance);
+                this.velocityElement.value = this.addNewDistanceToHistory(distance);
             }
             this.pumpControlElement.pumpState = fast.h;
             if(this.phase==Phases.EVALUATE_Z_SPEED) {
@@ -449,7 +445,7 @@ class GCDataUnit extends HTMLElement {
                     let requested = this.getJsObject(textLine, true);
                     if (requested == null) return;
                     this.testResult.targetPressure = requested.target;
-                    this.nyTargetPressureElement.value = requested.target;
+                    this.targetPressureElement.value = requested.target;
                     this.testResult.dt = 0;
                     this.targetPressureField.value = this.testResult.targetPressure;
                     this.phase = Phases.WAIT_FOR_TARGET_PRESSURE;
@@ -460,7 +456,7 @@ class GCDataUnit extends HTMLElement {
                         let reached = this.getJsObject(textLine, true);
                         if (reached == null) return;
                         this.testResult.targetPressure = reached.target;
-                        this.nyTargetPressureElement.value = reached.target;
+                        this.targetPressureElement.value = reached.target;
                         this.testResult.pressure = reached.p;
                         this.testResult.force = reached.f;
                         this.testResult.distance = reached.z;
@@ -598,6 +594,22 @@ class GCDataUnit extends HTMLElement {
             if(this.titleElement!=null) {
                 const titleText = languageCatalog?.[this.componentIdentifier]?.title || "Data Unit";
                 this.titleElement.textContent = titleText;
+            }
+            let elements = [
+                this.targetPressureElement,
+                this.pressureElement,
+                this.forceElement,
+                this.distanceElement,
+                this.velocityElement
+            ];
+            let prop = languageCatalog?.[this.componentIdentifier].properties;
+            for(let v=0;v<prop.length;v++) {
+                let rec = prop[v];
+                elements.forEach(element => {
+                    if(element.componentIdentifier===rec.key) {
+                       element.updateComponent(rec);
+                    }
+                });
             }
         }
     }

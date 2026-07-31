@@ -3,6 +3,7 @@ import { GCTable } from "./gc-table.js";
 class GCMeasurementsTable extends GCTable {
     constructor() {
         super();
+        this.shadowRoot.getElementById('available').innerHTML= `<gc-procedure-bar></gc-procedure-bar>`;
         this.onTestMeasurement = this.onTestMeasurement.bind(this);
     }
 

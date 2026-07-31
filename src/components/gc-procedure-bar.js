@@ -96,11 +96,11 @@ class GCProcedureBar extends HTMLElement {
     }
 
     onTestProcedureChange(event) {
-        console.log(event);
+        //console.log(event);
         let fName = this.selectTestProcedureElement.value;
         this.loadTestProcedure(fName);
     }
-    
+
     onPlateDiameterChange(event) {
         console.log(event);
     }
@@ -141,6 +141,8 @@ class GCProcedureBar extends HTMLElement {
             if (pro.plateDiameter_mm == newOption.value) newOption.selected = true;
             this.selectPlateDiameterElement.add(newOption);
         }
+        
+
     }
 
 

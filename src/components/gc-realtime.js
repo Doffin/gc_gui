@@ -57,7 +57,7 @@ template.innerHTML = `
     <div class="body">
         <div class="metric-item" id="title">
           <p class="metric-label" id="labelId">Kraft</p>
-          <p class="metric-value"><span id="valueId">84.9</span> <span class="metric-unit" id="unitId">kN</span></p>
+          <p class="metric-value"><span id="valueId">0.0</span> <span class="metric-unit" id="unitId">kN</span></p>
         </div>     
         <slot></slot>
         </div>
@@ -74,16 +74,21 @@ class GCRealtime extends HTMLElement {
         super();
         const root = this.attachShadow({ mode: "open" });
         root.append(template.content.cloneNode(true));
-        this.onLanguageChange = this.onLanguageChange.bind(this);
+//        this.onLanguageChange = this.onLanguageChange.bind(this);
         this.labelElement = root.getElementById("labelId");
         this.valueElement = root.getElementById("valueId");
         this.unitElement = root.getElementById("unitId");
         this.componentIdentifier = this.getAttribute("componentIdentifier") || "Realtime";
+        this.updateComponent = this.updateComponent.bind(this);
     }
 
     connectedCallback() {
-        document.addEventListener("app-language-change", this.onLanguageChange);
+//        document.addEventListener("app-language-change", this.onLanguageChange);
         this.render();
+    }
+
+    disconnectedCallback() {
+//        document.removeEventListener("app-language-change", this.onLanguageChange);
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -97,9 +102,6 @@ class GCRealtime extends HTMLElement {
         this.render();
     }
 
-    disconnectedCallback() {
-        document.removeEventListener("app-language-change", this.onLanguageChange);
-    }
 
     get label() {
         return this.getAttribute("label") || "";
@@ -139,6 +141,11 @@ class GCRealtime extends HTMLElement {
         this.setAttribute("decimals", value ?? "");
     }
 
+    updateComponent(record) {
+        this.label = record.label;
+        this.unit  = record.unit;
+    }
+
     formatValue() {
         const rawValue = this.value;
         const decimals = this.decimals;
@@ -153,7 +160,7 @@ class GCRealtime extends HTMLElement {
 
         return numericValue.toFixed(decimals);
     }
-
+/*
     async onLanguageChange(event) {
         const languageCatalog = event?.detail?.catalog;
         if (languageCatalog) {
@@ -162,6 +169,7 @@ class GCRealtime extends HTMLElement {
     }
 
     async applyLanguageChange(languageCatalog) {
+        if(!languageCatalog) return;
         const translatedLabel = languageCatalog?.[this.componentIdentifier]?.title;
         if (typeof translatedLabel === "string" && translatedLabel.length > 0) {
             this.labelElement.textContent = translatedLabel;
@@ -170,7 +178,7 @@ class GCRealtime extends HTMLElement {
 
         this.labelElement.textContent = this.label;
     }
-
+*/
     render() {
         this.labelElement.textContent = this.label;
         this.valueElement.textContent = this.formatValue();

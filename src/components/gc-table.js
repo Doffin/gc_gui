@@ -44,7 +44,10 @@ template.innerHTML = `
 
   <div class="w3-container w3-margin-bottom">
     <div class="body">
-        <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Table</h2>
+        <div id="headSlot">    
+            <h2 id="title" class="w3-center w3-text-blue w3-medium w3-left">Table</h2>
+            <span id="available"></span>
+        </div>
         <table class="w3-table w3-hoverable my_table">
             <thead id="tableHeader">
                 <tr id="tableHeaderRow"> </tr>
@@ -54,7 +57,7 @@ template.innerHTML = `
                 <!-- Measurement rows will be dynamically added here -->
             </tbody>
         </table>
-        <slot></slot>
+        <slot id="footSlot"></slot>
     </div>
   </div>
 `;

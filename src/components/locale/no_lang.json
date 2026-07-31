@@ -8,13 +8,13 @@
     "DataUnit": {
         "title": "Datamodul",
         "properties": [
-            {"label": "Måltrykk",   "key":"tp", "unit": "kPa", "tooltip": "Ønsket trykk i kilopascal"},
-            {"label": "Trykk",      "key":"p",  "unit": "kPa", "tooltip": "Observerte trykk i kilopascal"},
-            {"label": "Kraft",      "key":"f",  "unit": "kN",  "tooltip": "Kraft i kilonewton"},
-            {"label": "Setning",    "key":"z",  "unit": "mm", "tooltip": "Setning av bakken i millimeter"},
-            {"label": "Hastighet",  "key":"v",  "unit": "mm/min", "tooltip": "Sighastighet i millimeter per minutt"},
-            {"label": "Tid",        "key":"t",  "unit": "hh:mm:ss", "tooltip": "Når målingen ble tatt"}
-        ]
+            {"label": "Måltrykk",   "key":"targetPressure","unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
+            {"label": "Trykk",      "key":"pressure",      "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
+            {"label": "Kraft",      "key":"force",         "unit": "kN",  "tooltip": "Force in kilonewton"},
+            {"label": "Setning",    "key":"distance",      "unit": "mm", "tooltip": "Settling distance in millimeters"},
+            {"label": "Hastighet",  "key":"velocity",      "unit": "mm/min", "tooltip": "Settling speed in millimeters per minute"},
+            {"label": "Tid",        "key":"hhmmss",        "unit": "hh:mm:ss", "tooltip": "When measurement was taken"}
+     ]
     },
     "MeasurementGraph": {
         "title": "Måle graf",
@@ -25,7 +25,7 @@
         ]
     },
     "MeasurementTable": {
-        "title": "Målingstabell",
+        "title": "Måleresultat",
         "blankRows": 10,
         "tableHeader": [
             {"label": "Steg", "tooltip": "Steg nummer"},

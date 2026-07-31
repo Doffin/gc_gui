@@ -8,12 +8,12 @@
     "DataUnit": {
         "title": "Data Unit",
         "properties": [
-            {"label": "Target",  "key":"tp", "unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
-            {"label": "Pressure","key":"p",  "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
-            {"label": "Force",   "key":"f",  "unit": "kN",  "tooltip": "Force in kilonewton"},
-            {"label": "Settling","key":"z",  "unit": "mm", "tooltip": "Settling distance in millimeters"},
-            {"label": "Speed",   "key":"v",  "unit": "mm/min", "tooltip": "Settling speed in millimeters per minute"},
-            {"label": "Time",    "key":"t",  "unit": "hh:mm:ss", "tooltip": "When measurement was taken"}
+            {"label": "Target Pressure","key":"targetPressure","unit": "kPa", "tooltip": "Desired pressure in kilopascals"},
+            {"label": "Pressure","key":"pressure",      "unit": "kPa", "tooltip": "Observed pressure in kilopascals"},
+            {"label": "Force",   "key":"force",         "unit": "kN",  "tooltip": "Force in kilonewton"},
+            {"label": "Settling","key":"distance",      "unit": "mm", "tooltip": "Settling distance in millimeters"},
+            {"label": "Speed",   "key":"velocity",      "unit": "mm/min", "tooltip": "Settling speed in millimeters per minute"},
+            {"label": "Time",    "key":"hhmmss",        "unit": "hh:mm:ss", "tooltip": "When measurement was taken"}
         ]
     },
     "MeasurementGraph": {
