@@ -5,6 +5,20 @@
     "ProcedureBar": {
         "title": "Test:"
     },
+    "SettingsPage": {
+        "title": "Settings",
+        "properties": [
+            {"label": "Language","key":"language"}
+        ]
+    },
+    "JobPlanner": {
+        "title": "Project Planner",
+        "properties": [
+            {"label": "Project Name","key":"projectName","edit":"Edit...","placeHolder": "Choose or edit...", "tooltip": "Name of the project"},
+            {"label": "Sub Project Name","key":"subProjectName","edit":"Edit...","placeHolder": "Choose or edit...", "tooltip": "Name of the sub project"},
+            {"label": "Client Name","key":"clientName","edit":"Edit...","placeHolder": "Choose or edit...", "tooltip": "Name of the client"}
+        ]
+    },
     "DataUnit": {
         "title": "Data Unit",
         "properties": [

@@ -126,7 +126,7 @@
             padding-right: 4px;
         }
     </style>
-  <script type="module" crossorigin src="/wc/assets/index-CNHkVna-.js"></script>
+  <script type="module" crossorigin src="/wc/assets/index-BzhfgnQ0.js"></script>
   <link rel="stylesheet" crossorigin href="/wc/assets/index-Bmc4zB8i.css">
 </head>
 
@@ -138,14 +138,24 @@
         <div class="gc-topbar-spacer">
             <button id="bleButton"><i id="bleIcon" style="font-size:18px;" class="fa">&#xf293;</i></button>
             <button id="usbButton"><i id="usbIcon" style="font-size:18px;" class="fa">&#xf287;</i></button>
-            <button id="langButton"><i id="langIcon" style="font-size:18px" class="fa">&#xf0ac;</i></button>
-            <select class="w3-select w3-bar-item" id="gcLangSelect" title="Language"></select>
             <i id="batteryIcon" class="fa fa-battery-0"></i>
         </div>
     </div>
 
     <div class="w3-container">
         <div class="w3-row">
+            <div class="w3-col m12 l12 gc-column">
+                <div class="w3-col w3-card w3-round w3-border w3-left w3-margin-top">                   
+                    <gc-settings-page id="SettingsPage" key="SettingsPage" title="Settings Page">
+                    </gc-settings-page>
+                </div>
+            </div>
+            <div class="w3-col m12 l12 gc-column">
+                <div class="w3-col w3-card w3-round w3-border w3-left w3-margin-top">                   
+                    <gc-job-planner id="JobPlanner">
+                    </gc-job-planner>
+                </div>
+            </div>
             <div class="w3-col m6 l4 gc-column">
                 <div class="w3-col w3-card w3-round w3-border w3-left w3-margin-top">
                    

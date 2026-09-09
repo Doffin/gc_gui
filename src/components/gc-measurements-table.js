@@ -3,13 +3,20 @@ import { GCTable } from "./gc-table.js";
 class GCMeasurementsTable extends GCTable {
     constructor() {
         super();
-        this.shadowRoot.getElementById('available').innerHTML= `<gc-procedure-bar></gc-procedure-bar>`;
         this.onTestMeasurement = this.onTestMeasurement.bind(this);
+        this.onTestProcedureChange = this.onTestProcedureChange.bind(this);
     }
 
     connectedCallback() {
         super.connectedCallback();
+        document.addEventListener("test-procedure-change", this.onTestProcedureChange);
         document.addEventListener("test-measurement", this.onTestMeasurement);
+    }
+
+    disconnectedCallback() {
+        super.disconnectedCallback();
+        document.removeEventListener("test-procedure-change", this.onTestProcedureChange);
+        document.removeEventListener("test-measurement", this.onTestMeasurement);
     }
 
     /*
@@ -27,10 +34,10 @@ class GCMeasurementsTable extends GCTable {
         testResult.hhmmss = "00:00:00";     // Clock at start of test
         testResult.passed = false;          // Is ground speed below threshold
     */
+
     async onTestMeasurement(event) {
         const detail = event?.detail;
         const measurement = detail.measurement;        
-        console.log("New test-measurement "+measurement.targetPressure);
         let rowData = [];
         rowData[0] = measurement.nr;
         rowData[1] = measurement.name;
@@ -40,16 +47,49 @@ class GCMeasurementsTable extends GCTable {
         rowData[5] = measurement.velocity.toFixed(3);
         rowData[6] = measurement.hhmmss;
         rowData[7] = (measurement.passed==true)? "PASS" : "FAIL";
-        if(measurement.nr>0)
-           this.updateRowData(measurement.nr-1,rowData);
-        if(measurement.nr==0)
-           this.updateRowData(measurement.nr,rowData);
+        this.updateRowData(measurement.nr,rowData);
         this.render();
     }
 
-    disconnectedCallback() {
-        super.disconnectedCallback();
-        document.removeEventListener("test-measurement", this.onTestMeasurement);
+
+    async onTestProcedureChange(event) {
+        const detail = event?.detail;
+        const testProcedure = detail?.testProcedure;
+        if (testProcedure) {
+            await this.applyTestProcedureChange(testProcedure);
+        }
+    }
+
+    async applyTestProcedureChange(testProcedure) {
+        const measurement = {};
+        measurement.nr   = 0;
+        measurement.name ="Test";
+        measurement.targetPressure = 0.0;    // The pressure we wanted to have tested
+        measurement.pressure = 0.0;          // Actual pressure at t0
+        measurement.force = 0.0;          // Force applied to pressure plate
+        measurement.distance = 0.0;          // Ground z-distance at t0
+        measurement.velocity = 0.0;          // Settling speed at end of test in mm/min
+        measurement.vMax = 0.02;         // Max accepatble ground speed.
+        measurement.dt = 0;            // Duration of test evaluation in seconds
+        measurement.tMax = 60;           // Max duration of evaluatiuon period in seconds
+        measurement.hhmmss = "00:00:00";   // Clock at start of test
+        measurement.passed = false;        // Is ground speed below threshold
+        let testRows = testProcedure.content;
+        let rowData = [];
+
+        testRows.forEach(newRow => {
+            rowData[0] = newRow.step;
+            rowData[1] = newRow.phase;
+            rowData[2] = newRow.targetPressure.toFixed(1);
+            rowData[3] = measurement.pressure.toFixed(1);
+            rowData[4] = measurement.distance.toFixed(3);
+            rowData[5] = newRow.vMax;
+            rowData[6] = newRow.tMax;
+            rowData[7] = "?";
+            this.updateRowData(newRow.step,rowData);
+            //console.log(`Row ${newRow.step} ${newRow.phase}`);
+        });
+
     }
 
 }

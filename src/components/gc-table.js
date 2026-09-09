@@ -78,7 +78,7 @@ class GCTable extends HTMLElement {
 
     connectedCallback() {
         // Listen for language change events
-        document.addEventListener("app-language-change", this.onLanguageChange);
+        document.addEventListener("new-language-selected", this.onLanguageChange);
         let myPrefix = this.componentIdentifier;
         document.addEventListener(myPrefix+"-add-row", this.onAddRow.bind(this));
         this.render();
@@ -96,7 +96,7 @@ class GCTable extends HTMLElement {
     }
 
     disconnectedCallback() {
-        document.removeEventListener("app-language-change", this.onLanguageChange);
+        document.removeEventListener("new-language-selected", this.onLanguageChange);
         let myPrefix = this.componentIdentifier;
         document.removeEventListener(myPrefix+"-add-row", this.onAddRow.bind(this));
         // No need to call super.disconnectedCallback() because HTMLElement doesn't have it
@@ -186,10 +186,14 @@ class GCTable extends HTMLElement {
 
     updateRowData(rowIndex, rowData) {
         const tableBody = this.shadowRoot.getElementById("tableBody");
+        if(rowIndex===tableBody.rows.length) { 
+           this.appendRowToTable(rowData);
+           return;
+        }
         let rowToEdit = null;
         if (rowIndex >= 0 && rowIndex < tableBody.rows.length) {
             rowToEdit = tableBody.rows[rowIndex];
-        }
+        }        
         if(rowToEdit == null) return;
         let i=0;
         rowData.forEach(element => {

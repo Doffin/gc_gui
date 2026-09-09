@@ -75,7 +75,7 @@ class GCGraph extends HTMLElement {
 
     connectedCallback() {
         // Listen for language change events
-        document.addEventListener("app-language-change", this.onLanguageChange);
+        document.addEventListener("new-language-selected", this.onLanguageChange);
         let myPrefix = this.componentIdentifier;
         document.addEventListener(myPrefix+"-add-row", this.onAddRow.bind(this));
         this.render();
@@ -87,7 +87,7 @@ class GCGraph extends HTMLElement {
     }
 
     disconnectedCallback() {
-        document.removeEventListener("app-language-change", this.onLanguageChange);
+        document.removeEventListener("new-language-selected", this.onLanguageChange);
         let myPrefix = this.componentIdentifier;
         document.removeEventListener(myPrefix+"-add-row", this.onAddRow.bind(this));
         // No need to call super.disconnectedCallback() because HTMLElement doesn't have it

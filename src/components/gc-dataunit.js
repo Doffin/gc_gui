@@ -223,8 +223,7 @@ class GCDataUnit extends HTMLElement {
    }
 
     connectedCallback() {
-
-        document.addEventListener("app-language-change", this.onLanguageChange);
+        document.addEventListener("new-language-selected", this.onLanguageChange);
 
         this.usbButton.addEventListener("click", this.toggleUsbConnection);
         this.usbLink.addEventListener("app-log", this.onUsbLinkLog);
@@ -245,7 +244,7 @@ class GCDataUnit extends HTMLElement {
     }
 
     disconnectedCallback() {
-        document.removeEventListener("app-language-change", this.onLanguageChange);
+        document.removeEventListener("new-language-selected", this.onLanguageChange);
 
         this.usbButton.removeEventListener("click", this.toggleUsbConnection);
         this.usbLink.removeEventListener("app-log", this.onUsbLinkLog);

@@ -32,10 +32,10 @@ template.innerHTML = `
   </style>
 
     <div class="body">
-        <div class="top-bar">
-            <div class="" id="title">Title</div>
-            <div class=""><select class="" id="selectTestProcedure"></select></div>
-            <div class=""><select class="" id="selectPlateDiameter"></select></div>
+        <div class="top-bar ">
+            <div class="" id="title" hidden>Title</div>
+            <select class="" id="selectTestProcedure"></select>
+            <select class="" id="selectPlateDiameter"></select>
         <slot></slot>
         </div>
     </div>
@@ -61,7 +61,7 @@ class GCProcedureBar extends HTMLElement {
 
     connectedCallback() {
         // Listen for language change events
-        document.addEventListener("app-language-change", this.onLanguageChange);
+        document.addEventListener("new-language-selected", this.onLanguageChange);
         this.selectTestProcedureElement.addEventListener('change', this.onTestProcedureChange);
         this.selectPlateDiameterElement.addEventListener('change', this.onPlateDiameterChange);
         this.initTestProcedures();
@@ -74,12 +74,11 @@ class GCProcedureBar extends HTMLElement {
     }
 
     disconnectedCallback() {
-        document.removeEventListener("app-language-change", this.onLanguageChange);
+        document.removeEventListener("new-language-selected", this.onLanguageChange);
         this.selectTestProcedureElement.removeEventListener('change', this.onTestProcedureChange);
         this.selectPlateDiameterElement.removeEventListener('change', this.onPlateDiameterChange);
         // No need to call super.disconnectedCallback() because HTMLElement doesn't have it
     }
-
 
     async onLanguageChange(event) {
         const detail = event?.detail;
@@ -128,8 +127,8 @@ class GCProcedureBar extends HTMLElement {
     async loadTestProcedure(procedureName) {
         const url = `${import.meta.env.BASE_URL}test_procedures/${procedureName}`;
         const response = await fetch(url);
-        const pro = await response.json();
-        let options = pro.plateDiameterOptions;
+        const procedure = await response.json();
+        let options = procedure.plateDiameterOptions;
         let list = this.selectPlateDiameterElement;
         while (list.hasChildNodes()) {
             list.removeChild(list.firstChild);
@@ -138,11 +137,19 @@ class GCProcedureBar extends HTMLElement {
             let newOption = document.createElement("option");
             newOption.text = options[n];
             newOption.value = options[n];
-            if (pro.plateDiameter_mm == newOption.value) newOption.selected = true;
+            if (procedure.plateDiameter_mm == newOption.value) newOption.selected = true;
             this.selectPlateDiameterElement.add(newOption);
         }
-        
 
+        document.dispatchEvent(
+            new CustomEvent("test-procedure-change", {
+                detail: {
+                    testProcedure: procedure,
+                    plateDiameter: procedure.plateDiameter_mm,
+                    componentIdentifier: this.componentIdentifier,
+                },
+            }),
+        );
     }
 
 

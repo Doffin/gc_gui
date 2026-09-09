@@ -81,9 +81,6 @@ class GcBleLink extends EventTarget {
         }
 */
         if (!this.isConnected()) {
-            this.emitAppLog("warn", "Ignoring gc-send-cmd: BLE link is not connected", {
-                command: textLine,
-            });
             return;
         }
 

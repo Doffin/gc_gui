@@ -1,0 +1,31 @@
+{
+    "serviceProvider": "Machine Control AS",
+    "projects": [
+        {
+            "name": "E18",
+            "subProjects": [
+                {"name": "Porsgrunn"},
+                {"name": "Skien"},
+                {"name": "Bamble"}
+            ]
+        },
+        {
+            "name": "E6",
+            "subProjects": [
+                {"name": "Trondheim"},
+                {"name": "Stjørdal"},
+                {"name": "Verdal"}
+            ]
+        }
+    ],
+    "clients": [
+        {"name": "Statens vegvesen", "printPrefix": "SVV"},
+        {"name": "Jernbaneverket", "printPrefix": "JBV"},
+        {"name": "Kystverket", "printPrefix": "KV"}
+        ],
+    "operators": [
+        {"name": "Person A"},
+        {"name": "Person B"},
+        {"name": "Person C"}
+        ]
+}

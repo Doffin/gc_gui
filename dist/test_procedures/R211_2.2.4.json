@@ -11,6 +11,9 @@
       "step": 0,
       "phase": "Tare",
       "comment": "Nullstilling av sensor",
+      "targetPressure" : 0,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -37,6 +40,9 @@
       "step": 1,
       "phase": "Forbelastning Ev₁",
       "comment": "Preload phase - Nullpunkt",
+      "targetPressure" : 20,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -67,7 +73,10 @@
     {
       "step": 2,
       "phase": "Pålasting Ev₁",
+      "targetPressure" : 50,
       "comment": "",
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -94,7 +103,10 @@
     {
       "step": 3,
       "phase": "Pålasting Ev₁",
+      "targetPressure" : 180,
       "comment": "",
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -122,6 +134,9 @@
       "step": 4,
       "phase": "Pålasting Ev₁",
       "comment": "",
+      "targetPressure" : 300,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -149,6 +164,9 @@
       "step": 5,
       "phase": "Pålasting Ev₁",
       "comment": "",
+      "targetPressure" : 420,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -176,6 +194,9 @@
       "step": 6,
       "phase": "Pålasting Ev₁",
       "comment": "N200/R211 maks",
+      "targetPressure" : 500,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -203,6 +224,9 @@
       "step": 7,
       "phase": "Pålasting Ev₁ (utvidet)",
       "comment": "⚠️ over N200",
+      "targetPressure" : 600,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -230,6 +254,9 @@
       "step": 8,
       "phase": "Avlasting",
       "comment": "Hvile - Unloading to rest",
+      "targetPressure" : 0,
+      "vMax" : 0.02,
+      "tMax" : 120,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -257,6 +284,9 @@
       "step": 9,
       "phase": "Pålasting Ev₂",
       "comment": "",
+      "targetPressure" : 50,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -284,6 +314,9 @@
       "step": 10,
       "phase": "Pålasting Ev₂",
       "comment": "",
+      "targetPressure" : 180,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -311,6 +344,9 @@
       "step": 11,
       "phase": "Pålasting Ev₂",
       "comment": "",
+      "targetPressure" : 300,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -338,6 +374,9 @@
       "step": 12,
       "phase": "Pålasting Ev₂",
       "comment": "",
+      "targetPressure" : 420,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -365,6 +404,9 @@
       "step": 13,
       "phase": "Pålasting Ev₂",
       "comment": "",
+      "targetPressure" : 500,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -392,6 +434,9 @@
       "step": 14,
       "phase": "Pålasting Ev₂ (utvidet)",
       "comment": "⚠️ over N200",
+      "targetPressure" : 600,
+      "vMax" : 0.02,
+      "tMax" : 60,
       "sequence": [
         {
           "action": "move_to_pressure",
@@ -419,6 +464,9 @@
       "step": 15,
       "phase": "Reset",
       "comment": "Test complete - Reset sensor",
+      "targetPressure" : 0,
+      "vMax" : 0.02,
+      "tMax" : 120,
       "sequence": [
         {
           "action": "move_to_pressure",

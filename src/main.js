@@ -1,7 +1,12 @@
 import "./components/gc-message-area.js";
 import "./components/gc-table.js";
 import "./components/gc-realtime.js";
+import "./components/gc-select.js";
+import "./components/gc-language-select.js";
 import "./components/gc-measurements-table.js";
+import "./components/gc-settings-page.js";
+import "./components/gc-job-planner.js";
+
 import "./components/gc-dataunit.js";
 import "./components/gc-pump-control.js";
 import "./components/gc-procedure-bar.js";
@@ -9,8 +14,8 @@ import "./components/gc-graph.js";
 import "./components/gc-usblink.js";
 import "./components/gc-blelink.js";
 
-import { loadLanguageCatalog, supportedLanguagesCatalog } from "./components/locale/locale-loader.js";
-
+//import { loadLanguageCatalog, supportedLanguagesCatalog } from "./components/locale/locale-loader.js";
+/*
 let syncLangButtonState = () => {};
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -227,6 +232,6 @@ try {
 }
 
 setAppLanguage(initialLanguage);
-
+*/
 
 
