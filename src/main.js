@@ -1,6 +1,6 @@
 import "./components/gc-message-area.js";
 import "./components/gc-table.js";
-import "./components/gc-realtime.js";
+//import "./components/gc-realtime.js";
 import "./components/gc-select.js";
 import "./components/gc-language-select.js";
 import "./components/gc-measurements-table.js";
