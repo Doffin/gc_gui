@@ -37,20 +37,24 @@ class GCMeasurementsTable extends GCTable {
 
     async onTestMeasurement(event) {
         const detail = event?.detail;
-        const measurement = detail.measurement;        
+        const measurement = detail.measurement; 
+        // find this row in the table by measurement.targetPressure
         let rowData = [];
-        rowData[0] = measurement.nr;
-        rowData[1] = measurement.name;
+        let rowIndex = this.findRowIndexByTargetPressure(measurement.targetPressure);
+        console.log("Row index found:", rowIndex);
+        if(rowIndex === -1) return;
+        let originalRowData = this.parseMeasurementRowData(rowIndex);
+        rowData[0] = originalRowData.nr;
+        rowData[1] = originalRowData.name;
         rowData[2] = measurement.targetPressure.toFixed(1);
         rowData[3] = measurement.pressure.toFixed(1);
         rowData[4] = measurement.distance.toFixed(3);
         rowData[5] = measurement.velocity.toFixed(3);
         rowData[6] = measurement.hhmmss;
         rowData[7] = (measurement.passed==true)? "PASS" : "FAIL";
-        this.updateRowData(measurement.nr,rowData);
+        this.updateRowData(rowIndex,rowData);
         this.render();
     }
-
 
     async onTestProcedureChange(event) {
         const detail = event?.detail;
@@ -90,6 +94,37 @@ class GCMeasurementsTable extends GCTable {
             //console.log(`Row ${newRow.step} ${newRow.phase}`);
         });
 
+    }
+    findRowIndexByTargetPressure(targetPressure) {
+        let toFind = parseFloat(targetPressure.toFixed(1));
+        let max = this.getRowCount();
+        for (let i = 0; i < max; i++) {
+            // Use the PASS/FAIL column to see if this row already has been updated.
+            // Skip rows that have already been updated.
+//            if(this.getTableRow(i).children[8]?.textContent === "?") {
+                let tr = this.parseMeasurementRowData(i);
+                if (Math.abs(tr.targetPressure - toFind) < 0.05) {
+                    return i;
+                }
+//            }
+        }
+        return -1;
+    }
+
+    parseMeasurementRowData(rowIndex) {
+        let rd = this.getTableRow(rowIndex).children;
+        let measurement = {
+            nr: rd[0].textContent,
+            name: rd[1].textContent,
+            targetPressure: parseFloat(rd[2].textContent),
+            pressure: parseFloat(rd[3].textContent),
+            distance: parseFloat(rd[4].textContent),
+            velocity: parseFloat(rd[5].textContent),
+            vMax: parseFloat(rd[6].textContent),
+            tMax: parseFloat(rd[7].textContent),
+            passed: rd[8]?.textContent === "PASS"
+        };
+        return measurement;
     }
 
 }
