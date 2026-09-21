@@ -16,9 +16,11 @@ import { GcUsbLink } from "./components/gc-usblink.js";
 import { GcBleLink } from "./components/gc-blelink.js";
 import { TransportService } from "./services/transport-service.js";
 import { AppStore } from "./services/app-store.js";
+import { SurveyRepository } from "./services/survey-repository.js";
 
 export const appStore = new AppStore();
-export const mainController = new MainController({ appStore });
+export const surveyRepository = new SurveyRepository();
+export const mainController = new MainController({ appStore, surveyRepository });
 export const transportService = new TransportService({
     transports: {
         usb: new GcUsbLink({

@@ -33,7 +33,7 @@ template.innerHTML = `
 
     <div class="body">
         <div class="top-bar ">
-            <div class="" id="title" hidden>Title</div>
+            <div class="" id="title">Test Procedure</div>
             <select class="" id="selectTestProcedure"></select>
             <select class="" id="selectPlateDiameter"></select>
         <slot></slot>

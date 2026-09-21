@@ -26,4 +26,27 @@ describe("MainController", () => {
         expect(controller.getActiveJob().measurements).toEqual([{ nr: 1, passed: true }]);
         fetchMock.mockRestore();
     });
+
+    it("restores nested test measurements and persists updates through its repository", async () => {
+        const repository = {
+            getSurvey: vi.fn().mockResolvedValue({
+                activeJobIndex: 0,
+                surveyModel: {
+                    jobs: [{
+                        jobName: "Nested test",
+                        tests: [{ measurements: [{ step: 0, passed: false }] }],
+                    }],
+                },
+            }),
+            saveSurvey: vi.fn().mockResolvedValue(),
+        };
+        const controller = new MainController({ surveyRepository: repository });
+
+        await controller.loadSurveyModel();
+        controller.addMeasurement({ nr: 0, passed: true });
+        await Promise.resolve();
+
+        expect(controller.getActiveJob().tests[0].measurements).toEqual([{ nr: 0, passed: true }]);
+        expect(repository.saveSurvey).toHaveBeenCalled();
+    });
 });

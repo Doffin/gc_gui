@@ -8,56 +8,60 @@
     "jobs": [
         {
             "jobName": "Granitten",
-            "roadReference": "4201KV1370 S1D1 m248",
-            "location": {
-                "latitude": 58.7105667,
-                "longitude": 9.208685,
-                "altitude": 74.027,
-                "gridReference": "32 N 512089 6507843",
-                "point": "164757.987; 6522321.415; 74.027"
-            },
-            "side": 6.8,
             "testProcedure": "R211 2.2.4",
             "plateDiameter": 300,
-            "roadLayer": "Asphalt",
-            "soilType": "Sand",
-            "moistureContent": 12.5,
-            "counterWeight": 50,
-            "reportID": "MCP_20260921_DU2604B_1",
-            "reportStartDate": "2026-09-21",
-            "reportEndDate": "2026-09-21",
-            "reportPrintDate": "2026-09-21",
-            "weather": {
-                "temperature": 25,
-                "humidity": 40,
-                "windSpeed": 10,
-                "precipitation": 0,
-                "condition": "Sunny",
-                "conditionYesterday": "Clear",
-                "source": "Open-Meteo"
-            },
-            "measurements": [
-                {   
-                    "step" : 0,
-                    "name": "Name of the measurement",
-                    "targetPressure": 0.0,
-                    "pressure": 0.0,
-                    "distance": 0.0,
-                    "velocity": 0.0,
-                    "hhmmss": "00:00:00",
-                    "passed": true
+            "tests": [
+                {
+                    "testNumber": 1,
+                    "roadReference": "4201KV1370 S1D1 m248",
+                    "location": {
+                        "latitude": 58.7105667,
+                        "longitude": 9.208685,
+                        "altitude": 74.027,
+                        "gridReference": "32 N 512089 6507843",
+                        "point": "164757.987; 6522321.415; 74.027"
+                    },
+                    "side": 6.8,
+                    "roadLayer": "Asphalt",
+                    "soilType": "Sand",
+                    "moistureContent": 12.5,
+                    "counterWeight": 50,
+                    "reportID": "MCP_20260921_DU2604B_1",
+                    "reportStartDate": "2026-09-21",
+                    "reportEndDate": "2026-09-21",
+                    "reportPrintDate": "2026-09-21",
+                    "weather": {
+                        "temperature": 25,
+                        "humidity": 40,
+                        "windSpeed": 10,
+                        "precipitation": 0,
+                        "condition": "Sunny",
+                        "conditionYesterday": "Clear",
+                        "source": "Open-Meteo"
+                    },
+                    "measurements": [
+                        {
+                            "step": 0,
+                            "name": "Name of the measurement",
+                            "targetPressure": 0.0,
+                            "pressure": 0.0,
+                            "distance": 0.0,
+                            "velocity": 0.0,
+                            "hhmmss": "00:00:00",
+                            "passed": true
+                        }
+                    ],
+                    "summary": {
+                        "dP1": 0,
+                        "dz1": 0,
+                        "dP2": 0,
+                        "dz2": 0,
+                        "E1": 0,
+                        "eRatio": 0,
+                        "success": true
+                    }
                 }
-            ],
-            "summary": {
-                "dP1": 0,
-                "dz1": 0,
-                "dP2": 0,
-                "dz2": 0,
-                "E1": 0,
-                "eRatio": 0,
-                "success": true
-            }
+            ]
         }
     ]
-       
 }

@@ -48,9 +48,7 @@ template.innerHTML = `
                     <div class="w3-half">
                         <gc-select id="jobName" key="jobName" label="Job Name" value="Nr 1"></gc-select>
                     </div>
-                    <div class="w3-half">
-                        <gc-procedure-bar></gc-procedure-bar>
-                    </div>
+                    <gc-procedure-bar></gc-procedure-bar>
 
                 </div>
             </div>
