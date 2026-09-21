@@ -174,6 +174,11 @@ class GCDataUnit extends HTMLElement {
         });
 
         this.message = root.getElementById("message");
+        this.startTestButton = root.getElementById("startTestBtn");
+        this.stopTestButton = root.getElementById("stopTestBtn");
+        this.onStartTest = this.onStartTest.bind(this);
+        this.onStopTest = this.onStopTest.bind(this);
+        this.onTestProcedureChange = this.onTestProcedureChange.bind(this);
         const historySize = 20;
         const nowMs = Date.now();
         const obs = {};
@@ -202,6 +207,10 @@ class GCDataUnit extends HTMLElement {
         this.tMax = 60;
         this.nextStateMachineUpdate = Date.now() + 1000;
         this.secondsPause = 0;
+        this.testProcedure = null;
+        this.procedureSteps = [];
+        this.procedureStepIndex = -1;
+        this.procedureRunning = false;
 
         this.targetPressureElement = root.getElementById("targetPressure");
         this.pressureElement = root.getElementById("pressure");
@@ -224,6 +233,9 @@ class GCDataUnit extends HTMLElement {
 
     connectedCallback() {
         document.addEventListener("new-language-selected", this.onLanguageChange);
+        document.addEventListener("test-procedure-change", this.onTestProcedureChange);
+        this.startTestButton.addEventListener("click", this.onStartTest);
+        this.stopTestButton.addEventListener("click", this.onStopTest);
 
         this.usbButton.addEventListener("click", this.toggleUsbConnection);
         this.usbLink.addEventListener("app-log", this.onUsbLinkLog);
@@ -245,6 +257,9 @@ class GCDataUnit extends HTMLElement {
 
     disconnectedCallback() {
         document.removeEventListener("new-language-selected", this.onLanguageChange);
+        document.removeEventListener("test-procedure-change", this.onTestProcedureChange);
+        this.startTestButton.removeEventListener("click", this.onStartTest);
+        this.stopTestButton.removeEventListener("click", this.onStopTest);
 
         this.usbButton.removeEventListener("click", this.toggleUsbConnection);
         this.usbLink.removeEventListener("app-log", this.onUsbLinkLog);
@@ -368,7 +383,7 @@ class GCDataUnit extends HTMLElement {
                 this.testResult.dt = this.secondsElapsed;
                 mess = `EVAL v = ${this.velocity.toFixed(3)} mm/min [${this.secondsElapsed}/${this.tMax}]`;
                 this.message.textContent = mess;
-                if (Math.abs(this.velocity) < this.vMax)
+                if (Math.abs(this.velocity) <= this.vMax)
                     this.phase = Phases.EVALUATION_PASSED;
                 if (this.secondsElapsed >= this.tMax)
                     this.phase = Phases.EVALUATION_FAILED;
@@ -384,6 +399,14 @@ class GCDataUnit extends HTMLElement {
                 mess = `PASS ${this.velocity.toFixed(3)} < ${this.vMax} mm/min after ${this.secondsElapsed} s`;
                 this.message.textContent = mess;
                 this.phase = Phases.TEST_COMPLETED;
+                if(this.procedureStepIndex==1) {
+                    console.log("Resetting z-axis because test procedure number is 1");
+                    this.sendCmd(`distance=zero\r\n`);
+                    this.testResult.z = 0.0; this.testResult.t = 0;
+                    const obs = {};
+                    obs.z = 0.0; obs.t = 0;
+                    this.history.fill(obs);
+                }
                 this.secondsPause = 4;
                 break;
             case Phases.EVALUATION_FAILED:
@@ -399,11 +422,14 @@ class GCDataUnit extends HTMLElement {
                 this.secondsPause = 4;
                 break;
             case Phases.TEST_COMPLETED:
-                // UPDATE CONCLUSION
                 this.phase = Phases.IDLE;
                 this.targetPressureReached = false;
-                this.message.textContent = "TEST COMPLETED";
-                this.secondsPause = 2;
+                if (this.procedureRunning) {
+                    this.startNextProcedureStep();
+                } else {
+                    this.message.textContent = "TEST COMPLETED";
+                    this.secondsPause = 2;
+                }
                 break;
         }
     }
@@ -472,6 +498,108 @@ class GCDataUnit extends HTMLElement {
             storageScope: this.id || this.componentIdentifier || "default",
         });
         this.render();
+    }
+
+    onTestProcedureChange(event) {
+        const testProcedure = event?.detail?.testProcedure;
+        if (testProcedure) {
+            this.testProcedure = testProcedure;
+        }
+    }
+
+    async onStartTest() {
+        if (this.procedureRunning || this.phase !== Phases.IDLE) {
+            this.message.textContent = "A TEST IS ALREADY RUNNING";
+            return;
+        }
+
+        this.startTestButton.disabled = true;
+        try {
+            if (!this.testProcedure) {
+                const url = `${import.meta.env.BASE_URL}test_procedures/R211_2.2.4.json`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`Unable to load procedure (${response.status})`);
+                }
+                this.testProcedure = await response.json();
+            }
+
+            const steps = Array.isArray(this.testProcedure?.content) ? this.testProcedure.content : [];
+            this.procedureSteps = steps.map((step, index) => {
+                const targetPressure = this.parseNumber(step.targetPressure);
+                const vMax = this.parseNumber(step.vMax);
+                const tMax = this.parseNumber(step.tMax);
+                if (targetPressure === null || vMax === null || tMax === null || tMax < 0) {
+                    throw new Error(`Invalid values in procedure step ${step.step ?? index}`);
+                }
+                return { ...step, targetPressure, vMax, tMax };
+            });
+
+            if (this.procedureSteps.length === 0) {
+                throw new Error("The procedure contains no measurement steps");
+            }
+
+            this.procedureStepIndex = -1;
+            this.procedureRunning = true;
+            this.startNextProcedureStep();
+        } catch (error) {
+            this.procedureRunning = false;
+            this.startTestButton.disabled = false;
+            this.message.textContent = `TEST START FAILED: ${error.message}`;
+            this.emitAppLog("error", error.message);
+        }
+    }
+
+    onStopTest() {
+        this.procedureRunning = false;
+        this.procedureSteps = [];
+        this.procedureStepIndex = -1;
+        this.phase = Phases.IDLE;
+        this.secondsPause = 0;
+        this.targetPressureReached = false;
+        this.startTestButton.disabled = false;
+        this.sendCmd("pump=off");
+        this.message.textContent = "TEST STOPPED";
+    }
+
+    startNextProcedureStep() {
+        this.procedureStepIndex++;
+        if (this.procedureStepIndex >= this.procedureSteps.length) {
+            this.procedureRunning = false;
+            this.startTestButton.disabled = false;
+            this.message.textContent = "TEST PROCEDURE COMPLETED";
+            return;
+        }
+
+        const step = this.procedureSteps[this.procedureStepIndex];
+        this.vMax = step.vMax;
+        this.tMax = step.tMax;
+        this.secondsElapsed = 0;
+        this.secondsPause = 0;
+        this.targetPressureReached = false;
+        this.testResult = {
+            nr: step.step ?? this.procedureStepIndex,
+            name: step.phase || `Step ${this.procedureStepIndex + 1}`,
+            targetPressure: step.targetPressure,
+            pressure: 0.0,
+            force: 0.0,
+            distance: 0.0,
+            velocity: 0.0,
+            vMax: step.vMax,
+            dt: 0,
+            tMax: step.tMax,
+            hhmmss: "00:00:00",
+            passed: false,
+        };
+
+        this.targetPressure = step.targetPressure;
+        this.targetPressureField.value = step.targetPressure;
+        this.message.textContent = `STEP ${this.procedureStepIndex + 1}/${this.procedureSteps.length}: REQUEST ${step.targetPressure} kPa`;
+        if (!this.sendCmd(`pump:target=${step.targetPressure}`)) {
+            this.procedureRunning = false;
+            this.startTestButton.disabled = false;
+            this.message.textContent = "TEST STOPPED: COMMAND COULD NOT BE SENT";
+        }
     }
 
 
@@ -651,6 +779,8 @@ class GCDataUnit extends HTMLElement {
             }),
         );
     }
+
+    
 
     render() {
         if(this.titleElement!=null)

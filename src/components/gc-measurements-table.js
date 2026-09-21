@@ -3,20 +3,22 @@ import { GCTable } from "./gc-table.js";
 class GCMeasurementsTable extends GCTable {
     constructor() {
         super();
-        this.onTestMeasurement = this.onTestMeasurement.bind(this);
+        this.addTestMeasurement = this.addTestMeasurement.bind(this);
         this.onTestProcedureChange = this.onTestProcedureChange.bind(this);
+        const summary = {};
+        this.summary = summary;
     }
 
     connectedCallback() {
         super.connectedCallback();
         document.addEventListener("test-procedure-change", this.onTestProcedureChange);
-        document.addEventListener("test-measurement", this.onTestMeasurement);
+        document.addEventListener("test-measurement", this.addTestMeasurement);
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
         document.removeEventListener("test-procedure-change", this.onTestProcedureChange);
-        document.removeEventListener("test-measurement", this.onTestMeasurement);
+        document.removeEventListener("test-measurement", this.addTestMeasurement);
     }
 
     /*
@@ -35,24 +37,19 @@ class GCMeasurementsTable extends GCTable {
         testResult.passed = false;          // Is ground speed below threshold
     */
 
-    async onTestMeasurement(event) {
+    async addTestMeasurement(event) {
         const detail = event?.detail;
         const measurement = detail.measurement; 
-        // find this row in the table by measurement.targetPressure
         let rowData = [];
-        let rowIndex = this.findRowIndexByTargetPressure(measurement.targetPressure);
-        console.log("Row index found:", rowIndex);
-        if(rowIndex === -1) return;
-        let originalRowData = this.parseMeasurementRowData(rowIndex);
-        rowData[0] = originalRowData.nr;
-        rowData[1] = originalRowData.name;
+        rowData[0] = measurement.nr;
+        rowData[1] = measurement.name;
         rowData[2] = measurement.targetPressure.toFixed(1);
         rowData[3] = measurement.pressure.toFixed(1);
         rowData[4] = measurement.distance.toFixed(3);
         rowData[5] = measurement.velocity.toFixed(3);
         rowData[6] = measurement.hhmmss;
         rowData[7] = (measurement.passed==true)? "PASS" : "FAIL";
-        this.updateRowData(rowIndex,rowData);
+        this.updateRowData(measurement.nr,rowData);
         this.render();
     }
 
@@ -66,8 +63,8 @@ class GCMeasurementsTable extends GCTable {
 
     async applyTestProcedureChange(testProcedure) {
         const measurement = {};
-        measurement.nr   = 0;
-        measurement.name ="Test";
+        measurement.nr    = 0;
+        measurement.name  ="Test";
         measurement.targetPressure = 0.0;    // The pressure we wanted to have tested
         measurement.pressure = 0.0;          // Actual pressure at t0
         measurement.force = 0.0;          // Force applied to pressure plate
@@ -78,6 +75,8 @@ class GCMeasurementsTable extends GCTable {
         measurement.tMax = 60;           // Max duration of evaluatiuon period in seconds
         measurement.hhmmss = "00:00:00";   // Clock at start of test
         measurement.passed = false;        // Is ground speed below threshold
+        this.summary.delta1 = testProcedure.delta1;
+        this.summary.delta2 = testProcedure.delta2;
         let testRows = testProcedure.content;
         let rowData = [];
 
@@ -93,38 +92,51 @@ class GCMeasurementsTable extends GCTable {
             this.updateRowData(newRow.step,rowData);
             //console.log(`Row ${newRow.step} ${newRow.phase}`);
         });
-
-    }
-    findRowIndexByTargetPressure(targetPressure) {
-        let toFind = parseFloat(targetPressure.toFixed(1));
-        let max = this.getRowCount();
-        for (let i = 0; i < max; i++) {
-            // Use the PASS/FAIL column to see if this row already has been updated.
-            // Skip rows that have already been updated.
-//            if(this.getTableRow(i).children[8]?.textContent === "?") {
-                let tr = this.parseMeasurementRowData(i);
-                if (Math.abs(tr.targetPressure - toFind) < 0.05) {
-                    return i;
-                }
-//            }
-        }
-        return -1;
     }
 
-    parseMeasurementRowData(rowIndex) {
-        let rd = this.getTableRow(rowIndex).children;
-        let measurement = {
-            nr: rd[0].textContent,
-            name: rd[1].textContent,
-            targetPressure: parseFloat(rd[2].textContent),
-            pressure: parseFloat(rd[3].textContent),
-            distance: parseFloat(rd[4].textContent),
-            velocity: parseFloat(rd[5].textContent),
-            vMax: parseFloat(rd[6].textContent),
-            tMax: parseFloat(rd[7].textContent),
-            passed: rd[8]?.textContent === "PASS"
-        };
-        return measurement;
+    calculateSummaryResults() {
+        // Implement the logic to calculate summary results for the measurements table
+        /*
+        Fra kurven for første gang belastning blir E1-verdien regnet ut på følgende måte: 
+        Først bestemmes de punkter på kurven som tilsvarer 0,3 og 0,7 av maksimalbelastningen. 
+        Ved en totalbelastning på 600 kN/m2 tas setningen s1 ved 180 og s2 ved 420 kN/m2 
+        (hhv. 0,3 og 0,7 av totalbelastningen). 
+        ∆p=p2-p1 (kN/m2) 
+        ∆s=s2-s1 (kN/m) 
+        Verdiene settes inn i følgende formelen: 
+        𝐸 = 0,75 ∙(Δ𝑝/Δ𝑠) ∙𝐷
+        hvor D er diameteren på trykkplaten som brukes under testprosedyren.
+        Fra kurven for andre gangs belastning, tas setningsverdien ut mellom det andre belastningstrinnet 180 
+        kN/m2 og det høyeste belastningstrinnet hvor kurven er tilnærmet rettlinjet. E2-verdien beregnes på samme 
+        måte som E1-verdien. Verdien E2/E1 beregnes og oppgis med en desimal. Grenseverdier og krav finnes i Normal N200.  
+        */
+        // In stead of calculating the index of p1,p2 we will read the values from the testProcedure.
+        // We will use the delta1 and delta2 values from the testProcedure to determine the indices for E1 and E2 calculations.
+        let maxLoad = Math.max(...this.measurements.map(m => m.targetPressure)); //max value 
+        let D  = 0.3;   // Diameter of pressureplate used during test procedure 
+        let p1Index1 = this.summary.delta1.p1Index;
+        let p2Index1 = this.summary.delta1.p2Index;
+        let p1_1 = this.measurements[p1Index1].targetPressure;
+        let p2_1 = this.measurements[p2Index1].targetPressure;
+        let s1_1 = this.measurements[p1Index1].distance;
+        let s2_1 = this.measurements[p2Index1].distance;
+        let dp1 = p2_1 - p1_1;
+        let ds1 = s2_1 - s1_1;
+        let E1 = 0.75 * (dp1 / ds1) * D;
+        let p1Index2 = this.summary.delta2.p1Index;
+        let p2Index2 = this.summary.delta2.p2Index;
+        let p1_2 = this.measurements[p1Index2].targetPressure;
+        let p2_2 = this.measurements[p2Index2].targetPressure;
+        let s1_2 = this.measurements[p1Index2].distance;
+        let s2_2 = this.measurements[p2Index2].distance;
+        let dp2 = p2_2 - p1_2;
+        let ds2 = s2_2 - s1_2;
+        let E2 = 0.75 * (dp2 / ds2) * D;
+        console.log(`E1 calculation: dp1=${dp1}, ds1=${ds1}, D=${D}, E1=${E1}`);
+        console.log(`E2 calculation: dp2=${dp2}, ds2=${ds2}, D=${D}, E2=${E2}`);
+        console.log(`E ratio calculation: E2/E1=${E2 / E1}`);
+
+        return { E1, E2, ratio: E2 / E1 };
     }
 
 }
