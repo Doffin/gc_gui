@@ -94,7 +94,14 @@ class GCPumpControl extends HTMLElement {
 
         this.downButtonElement = root.getElementById("downButton");
         this.onPumpDownClick   = this.onPumpDownClick.bind(this);
-        
+        this.transportService = null;
+    }
+
+    setTransportService(transportService) {
+        if (!transportService || typeof transportService.sendCommand !== "function") {
+            throw new TypeError("transportService must provide sendCommand()");
+        }
+        this.transportService = transportService;
     }
 
     connectedCallback() {
@@ -178,15 +185,7 @@ class GCPumpControl extends HTMLElement {
     }
 
     sendCmd(textToSend) {
-        document.dispatchEvent(
-            new CustomEvent("gc-send-cmd", {
-                detail: {
-                    textLine: textToSend,
-                    componentIdentifier: this.componentIdentifier,
-                },
-            }),
-        );
-        return true;
+        return this.transportService?.sendCommand(textToSend) || false;
     }
 
 }

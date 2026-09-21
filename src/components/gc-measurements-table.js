@@ -3,22 +3,38 @@ import { GCTable } from "./gc-table.js";
 class GCMeasurementsTable extends GCTable {
     constructor() {
         super();
-        this.addTestMeasurement = this.addTestMeasurement.bind(this);
-        this.onTestProcedureChange = this.onTestProcedureChange.bind(this);
+        this.onProcedureStoreChange = this.onProcedureStoreChange.bind(this);
+        this.onMeasurementStoreChange = this.onMeasurementStoreChange.bind(this);
+        this.appStore = null;
         const summary = {};
         this.summary = summary;
     }
 
+    setAppStore(appStore) {
+        if (!appStore || typeof appStore.getProcedure !== "function" || typeof appStore.getMeasurements !== "function") {
+            throw new TypeError("appStore must provide procedure and measurement accessors");
+        }
+        this.appStore = appStore;
+        if (this.isConnected) {
+            this.appStore.addEventListener("procedure-changed", this.onProcedureStoreChange);
+            this.appStore.addEventListener("measurement-recorded", this.onMeasurementStoreChange);
+            this.syncProcedureFromStore();
+            this.syncMeasurementsFromStore();
+        }
+    }
+
     connectedCallback() {
         super.connectedCallback();
-        document.addEventListener("test-procedure-change", this.onTestProcedureChange);
-        document.addEventListener("test-measurement", this.addTestMeasurement);
+        this.appStore?.addEventListener("procedure-changed", this.onProcedureStoreChange);
+        this.appStore?.addEventListener("measurement-recorded", this.onMeasurementStoreChange);
+        this.syncProcedureFromStore();
+        this.syncMeasurementsFromStore();
     }
 
     disconnectedCallback() {
         super.disconnectedCallback();
-        document.removeEventListener("test-procedure-change", this.onTestProcedureChange);
-        document.removeEventListener("test-measurement", this.addTestMeasurement);
+        this.appStore?.removeEventListener("procedure-changed", this.onProcedureStoreChange);
+        this.appStore?.removeEventListener("measurement-recorded", this.onMeasurementStoreChange);
     }
 
     /*
@@ -37,9 +53,7 @@ class GCMeasurementsTable extends GCTable {
         testResult.passed = false;          // Is ground speed below threshold
     */
 
-    async addTestMeasurement(event) {
-        const detail = event?.detail;
-        const measurement = detail.measurement; 
+    renderMeasurement(measurement) {
         let rowData = [];
         rowData[0] = measurement.nr;
         rowData[1] = measurement.name;
@@ -53,12 +67,23 @@ class GCMeasurementsTable extends GCTable {
         this.render();
     }
 
-    async onTestProcedureChange(event) {
-        const detail = event?.detail;
-        const testProcedure = detail?.testProcedure;
-        if (testProcedure) {
-            await this.applyTestProcedureChange(testProcedure);
+    async onProcedureStoreChange(event) {
+        await this.applyTestProcedureChange(event.detail.procedure);
+    }
+
+    onMeasurementStoreChange(event) {
+        this.renderMeasurement(event.detail.measurement);
+    }
+
+    async syncProcedureFromStore() {
+        const procedure = this.appStore?.getProcedure();
+        if (procedure) {
+            await this.applyTestProcedureChange(procedure);
         }
+    }
+
+    syncMeasurementsFromStore() {
+        this.appStore?.getMeasurements().forEach((measurement) => this.renderMeasurement(measurement));
     }
 
     async applyTestProcedureChange(testProcedure) {

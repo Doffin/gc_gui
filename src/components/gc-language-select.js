@@ -75,6 +75,13 @@ class GCLanguageSelect extends HTMLElement {
         this.key = this.getAttribute("key") || "LanguageSelect";
         this.updateComponentOptions = this.updateComponentOptions.bind(this);
         this.emitNewCountryCodeSelected = this.emitNewCountryCodeSelected.bind(this);
+        this.appStore = null;
+    }
+
+    setAppStore(appStore) {
+        if (!appStore || typeof appStore.setLanguage !== "function") throw new TypeError("appStore must provide setLanguage()");
+        this.appStore = appStore;
+        if (this.isConnected && !this.optionsInitialized) this.initializeOptions();
     }
 
     connectedCallback() {
@@ -83,7 +90,6 @@ class GCLanguageSelect extends HTMLElement {
             this.value = countryCode;
             this.emitNewCountryCodeSelected(countryCode);
         });
-        this.initializeOptions();
         this.render();
     }
 
@@ -92,6 +98,8 @@ class GCLanguageSelect extends HTMLElement {
     }
 
     initializeOptions() {
+        if (this.optionsInitialized) return;
+        this.optionsInitialized = true;
         const url = new URL(`./locale/languages2.json`, import.meta.url);
 
         fetch(url)
@@ -101,6 +109,7 @@ class GCLanguageSelect extends HTMLElement {
             }
             )
             .catch((error) => {
+                this.optionsInitialized = false;
                 console.error("Error loading languages2.json:", error);
             }); 
     }
@@ -125,18 +134,13 @@ class GCLanguageSelect extends HTMLElement {
         const url = new URL(`./locale/${countryCode}_lang.json`, import.meta.url);
         let response = await fetch(url);
         let catalog = await response.json();
-        this.dispatchEvent(
-            new CustomEvent("new-language-selected", {
-                detail: {
-                    code: countryCode,
-                    catalog: catalog,
-                    key: this.key,
-                    source: this.id || this.tagName.toLowerCase(),
-                },
-                bubbles: true,
-                composed: true,
-            }),
-        );
+        if (!this.appStore) throw new Error("Language select requires an injected appStore");
+        this.appStore.setLanguage(countryCode, catalog);
+        this.dispatchEvent(new CustomEvent("new-language-selected", {
+            detail: { code: countryCode, catalog, key: this.key, source: this.id || this.tagName.toLowerCase() },
+            bubbles: true,
+            composed: true,
+        }));
     }
 
     render() {

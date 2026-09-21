@@ -63,23 +63,37 @@ class GCSettingsPage extends HTMLElement {
         this.titleElement = root.getElementById("title");
         this.onLanguageChange = this.onLanguageChange.bind(this);
         this.key = this.getAttribute("key") || this.constructor.prefix;
+        this.languageSelectElement = root.getElementById("languageSelect");
+        this.appStore = null;
 
     }
 
     connectedCallback() {
         // Listen for language change events
-        document.addEventListener("new-language-selected", this.onLanguageChange);
+        this.appStore?.addEventListener("language-changed", this.onLanguageChange);
         this.render();
     }
 
     disconnectedCallback() {
-        document.removeEventListener("new-language-selected", this.onLanguageChange);
+        this.appStore?.removeEventListener("language-changed", this.onLanguageChange);
         // No need to call super.disconnectedCallback() because HTMLElement doesn't have it
     }
     
     attributeChangedCallback() {
         this.key = this.getAttribute("key") || this.constructor.prefix; 
         this.render();  
+    }
+
+    setAppStore(appStore) {
+        if (!appStore || typeof appStore.getLanguage !== "function") throw new TypeError("appStore must provide getLanguage()");
+        this.appStore?.removeEventListener("language-changed", this.onLanguageChange);
+        this.appStore = appStore;
+        this.languageSelectElement.setAppStore(appStore);
+        if (this.isConnected) {
+            this.appStore.addEventListener("language-changed", this.onLanguageChange);
+            const language = appStore.getLanguage();
+            if (language) this.onLanguageChange({ detail: language });
+        }
     }
 
     async onLanguageChange(event) {
@@ -110,17 +124,6 @@ class GCSettingsPage extends HTMLElement {
         this.titleElement.textContent = this.getAttribute("title") || this.constructor.prefix; 
     }
 
-    sendCmd(textToSend) {
-        document.dispatchEvent(
-            new CustomEvent("gc-send-cmd", {
-                detail: {
-                    textLine: textToSend,
-                    componentIdentifier: this.key,
-                },
-            }),
-        );
-        return true;
-    }
 }
 
 customElements.define("gc-settings-page", GCSettingsPage);

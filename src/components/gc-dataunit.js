@@ -5,6 +5,8 @@ import { GcBleLink } from "./gc-blelink.js";
 import { GCProcedureBar } from "./gc-procedure-bar.js";
 import { GCRealtime } from "./gc-realtime.js";
 import { GCPumpControl } from "./gc-pump-control.js";
+import { TestProcedureController } from "../controllers/test-procedure-controller.js";
+import { TransportService } from "../services/transport-service.js";
 
 const template = document.createElement("template");
 template.innerHTML = `
@@ -127,15 +129,6 @@ template.innerHTML = `
   </div>
 `;
 
-const Phases = {
-    IDLE: 0,
-    WAIT_FOR_TARGET_PRESSURE: 1,
-    EVALUATE_Z_SPEED: 2,
-    EVALUATION_PASSED: 3,
-    EVALUATION_FAILED: 4,
-    TEST_COMPLETED: 5
-}
-
 class GCDataUnit extends HTMLElement {
     static get observedAttributes() {
         return ["title", "componentIdentifier"];
@@ -150,67 +143,38 @@ class GCDataUnit extends HTMLElement {
 
         this.onLanguageChange = this.onLanguageChange.bind(this);
 
-        this.usbButton = document.getElementById("usbButton");
-        this.onUsbLinkLog = this.onUsbLinkLog.bind(this);
-        this.onUsbLinkStatus = this.onUsbLinkStatus.bind(this);
-        this.onUsbSerialLine = this.onUsbSerialLine.bind(this);
+        this.usbButton = null;
+        this.onTransportLog = this.onTransportLog.bind(this);
+        this.onTransportStatus = this.onTransportStatus.bind(this);
+        this.onTransportSerialLine = this.onTransportSerialLine.bind(this);
         this.toggleUsbConnection = this.toggleUsbConnection.bind(this);
 
-        this.bleButton = document.getElementById("bleButton");
-        this.onBleLinkLog = this.onBleLinkLog.bind(this);
-        this.onBleLinkStatus = this.onBleLinkStatus.bind(this);
-        this.onBleSerialLine = this.onBleSerialLine.bind(this);
+        this.bleButton = null;
+        this.batteryIcon = null;
         this.toggleBleConnection = this.toggleBleConnection.bind(this);
-
-
-        this.usbLink = new GcUsbLink({
-            componentIdentifier: this.componentIdentifier,
-            storageScope: this.id || this.componentIdentifier || "default",
-        });
-
-        this.bleLink = new GcBleLink({
-            componentIdentifier: this.componentIdentifier,
-            serviceUuid: "6e400001-b5a3-f393-e0a9-e50e24dcca9e", //"00005501-d102-11e1-9b23-00025b00a5a5",
-        });
+        this.transportService = null;
+        this.transportInitialized = false;
+        this.appStore = null;
+        this.onProcedureStoreChange = this.onProcedureStoreChange.bind(this);
 
         this.message = root.getElementById("message");
         this.startTestButton = root.getElementById("startTestBtn");
         this.stopTestButton = root.getElementById("stopTestBtn");
         this.onStartTest = this.onStartTest.bind(this);
         this.onStopTest = this.onStopTest.bind(this);
-        this.onTestProcedureChange = this.onTestProcedureChange.bind(this);
+        this.procedureController = new TestProcedureController();
+        this.onProcedureCommandRequested = this.onProcedureCommandRequested.bind(this);
+        this.onProcedureStatus = this.onProcedureStatus.bind(this);
+        this.onProcedureStepStarted = this.onProcedureStepStarted.bind(this);
+        this.onProcedureTargetRequested = this.onProcedureTargetRequested.bind(this);
+        this.onProcedureMeasurementComplete = this.onProcedureMeasurementComplete.bind(this);
+        this.onProcedureComplete = this.onProcedureComplete.bind(this);
+        this.onDistanceResetRequested = this.onDistanceResetRequested.bind(this);
         const historySize = 20;
-        const nowMs = Date.now();
         const obs = {};
         obs.z = 0.0; obs.t = 0;
         this.history = new Array(historySize).fill(obs);
-        this.phase = Phases.IDLE;
-        // We fill the testResult during a test
-        const testResult = {};
-        testResult.nr   = 1;
-        testResult.name ="Forbelastning";
-        testResult.targetPressure = 0.0;    // The pressure we wanted to have tested
-        testResult.pressure = 0.0;          // Actual pressure at t0
-        testResult.force = 0.0;          // Force applied to pressure plate
-        testResult.distance = 0.0;          // Ground z-distance at t0
-        testResult.velocity = 0.0;          // Settling speed at end of test in mm/min
-        testResult.vMax = 0.02;         // Max accepatble ground speed.
-        testResult.dt = 0;            // Duration of test evaluation in seconds
-        testResult.tMax = 60;           // Max duration of evaluatiuon period in seconds
-        testResult.hhmmss = "00:00:00";   // Clock at start of test
-        testResult.passed = false;        // Is ground speed below threshold
-
-        this.testResult = testResult;
         this.velocity = 0.0;
-        this.vMax = 0.02;
-        this.secondsElapsed = 0;
-        this.tMax = 60;
-        this.nextStateMachineUpdate = Date.now() + 1000;
-        this.secondsPause = 0;
-        this.testProcedure = null;
-        this.procedureSteps = [];
-        this.procedureStepIndex = -1;
-        this.procedureRunning = false;
 
         this.targetPressureElement = root.getElementById("targetPressure");
         this.pressureElement = root.getElementById("pressure");
@@ -226,30 +190,61 @@ class GCDataUnit extends HTMLElement {
             let cmdMsg = `pump:target=${this.targetPressure}`;
             this.sendCmd(cmdMsg);
             this.message.textContent = `REQUEST ${this.targetPressure} kPa`;
-            this.secondsPause = 2;
         });
 
    }
 
+    setTransportService(transportService) {
+        if (!(transportService instanceof TransportService)) {
+            throw new TypeError("transportService must be a TransportService");
+        }
+        if (this.transportInitialized) {
+            throw new Error("TransportService cannot be replaced after initialization");
+        }
+        this.transportService = transportService;
+        this.pumpControlElement.setTransportService(transportService);
+    }
+
+    setConnectionControls({ usbButton = null, bleButton = null, batteryIcon = null } = {}) {
+        this.usbButton?.removeEventListener("click", this.toggleUsbConnection);
+        this.bleButton?.removeEventListener("click", this.toggleBleConnection);
+        this.usbButton = usbButton;
+        this.bleButton = bleButton;
+        this.batteryIcon = batteryIcon;
+        if (this.isConnected) {
+            this.usbButton?.addEventListener("click", this.toggleUsbConnection);
+            this.bleButton?.addEventListener("click", this.toggleBleConnection);
+        }
+    }
+
+    setAppStore(appStore) {
+        if (!appStore || typeof appStore.getProcedure !== "function") {
+            throw new TypeError("appStore must provide getProcedure()");
+        }
+        this.appStore = appStore;
+        if (this.isConnected) {
+            this.appStore.addEventListener("procedure-changed", this.onProcedureStoreChange);
+            this.syncProcedureFromStore();
+        }
+    }
+
     connectedCallback() {
         document.addEventListener("new-language-selected", this.onLanguageChange);
-        document.addEventListener("test-procedure-change", this.onTestProcedureChange);
+        this.appStore?.addEventListener("procedure-changed", this.onProcedureStoreChange);
+        this.syncProcedureFromStore();
         this.startTestButton.addEventListener("click", this.onStartTest);
         this.stopTestButton.addEventListener("click", this.onStopTest);
+        this.procedureController.addEventListener("command-requested", this.onProcedureCommandRequested);
+        this.procedureController.addEventListener("status", this.onProcedureStatus);
+        this.procedureController.addEventListener("step-started", this.onProcedureStepStarted);
+        this.procedureController.addEventListener("target-requested", this.onProcedureTargetRequested);
+        this.procedureController.addEventListener("measurement-complete", this.onProcedureMeasurementComplete);
+        this.procedureController.addEventListener("procedure-complete", this.onProcedureComplete);
+        this.procedureController.addEventListener("distance-reset-requested", this.onDistanceResetRequested);
 
-        this.usbButton.addEventListener("click", this.toggleUsbConnection);
-        this.usbLink.addEventListener("app-log", this.onUsbLinkLog);
-        this.usbLink.addEventListener("port-status-change", this.onUsbLinkStatus);
-        this.usbLink.addEventListener("serial-line", this.onUsbSerialLine);
-        this.usbLink.startMonitoring();
-        this.usbLink.enableAutoConnect();
-
-
-        this.bleButton.addEventListener("click", this.toggleBleConnection);
-        this.bleLink.addEventListener("app-log", this.onUsbLinkLog);
-        this.bleLink.addEventListener("port-status-change", this.onBleLinkStatus);
-        this.bleLink.addEventListener("serial-line", this.onBleSerialLine);
-        this.bleLink.startMonitoring();
+        this.usbButton?.addEventListener("click", this.toggleUsbConnection);
+        this.bleButton?.addEventListener("click", this.toggleBleConnection);
+    queueMicrotask(() => this.initializeTransportService());
 
         this.targetPressure = 0.0;
         this.render();
@@ -257,27 +252,61 @@ class GCDataUnit extends HTMLElement {
 
     disconnectedCallback() {
         document.removeEventListener("new-language-selected", this.onLanguageChange);
-        document.removeEventListener("test-procedure-change", this.onTestProcedureChange);
+        this.appStore?.removeEventListener("procedure-changed", this.onProcedureStoreChange);
         this.startTestButton.removeEventListener("click", this.onStartTest);
         this.stopTestButton.removeEventListener("click", this.onStopTest);
+        this.procedureController.removeEventListener("command-requested", this.onProcedureCommandRequested);
+        this.procedureController.removeEventListener("status", this.onProcedureStatus);
+        this.procedureController.removeEventListener("step-started", this.onProcedureStepStarted);
+        this.procedureController.removeEventListener("target-requested", this.onProcedureTargetRequested);
+        this.procedureController.removeEventListener("measurement-complete", this.onProcedureMeasurementComplete);
+        this.procedureController.removeEventListener("procedure-complete", this.onProcedureComplete);
+        this.procedureController.removeEventListener("distance-reset-requested", this.onDistanceResetRequested);
 
-        this.usbButton.removeEventListener("click", this.toggleUsbConnection);
-        this.usbLink.removeEventListener("app-log", this.onUsbLinkLog);
-        this.usbLink.removeEventListener("port-status-change", this.onUsbLinkStatus);
-        this.usbLink.removeEventListener("serial-line", this.onUsbSerialLine);
-        this.usbLink.stopMonitoring();
-        this.usbLink.disconnectPort({ intentional: true });
+        this.usbButton?.removeEventListener("click", this.toggleUsbConnection);
+        this.bleButton?.removeEventListener("click", this.toggleBleConnection);
+        if (this.transportInitialized) {
+            this.transportService.removeEventListener("app-log", this.onTransportLog);
+            this.transportService.removeEventListener("port-status-change", this.onTransportStatus);
+            this.transportService.removeEventListener("serial-line", this.onTransportSerialLine);
+            this.transportService.stop();
+            this.transportInitialized = false;
+        }
+    }
 
-        this.bleButton.removeEventListener("click", this.toggleBleConnection);
-        this.bleLink.removeEventListener("port-status-change", this.onBleLinkStatus);
-        this.bleLink.removeEventListener("serial-line", this.onBleSerialLine);
-        this.bleLink.stopMonitoring();
-        this.bleLink.disconnectPort({ intentional: true });
+    initializeTransportService() {
+        if (!this.isConnected || this.transportInitialized) {
+            return;
+        }
+        if (!this.transportService) {
+            const usbLink = new GcUsbLink({
+                componentIdentifier: this.componentIdentifier,
+                storageScope: this.id || this.componentIdentifier || "default",
+            });
+            const bleLink = new GcBleLink({
+                componentIdentifier: this.componentIdentifier,
+                serviceUuid: "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+            });
+            this.transportService = new TransportService({
+                transports: { usb: usbLink, ble: bleLink },
+            });
+            this.pumpControlElement.setTransportService(this.transportService);
+        }
+
+        this.transportService.addEventListener("app-log", this.onTransportLog);
+        this.transportService.addEventListener("port-status-change", this.onTransportStatus);
+        this.transportService.addEventListener("serial-line", this.onTransportSerialLine);
+        this.transportService.start();
+        this.transportService.enableAutoConnect("usb");
+        this.transportInitialized = true;
     }
 
     setBatteryState(voltage, batteryLevel) {
         //        console.log(`Set battery ${voltage} volt, level ${batteryLevel}`);
-        var batt = document.getElementById("batteryIcon");
+        const batt = this.batteryIcon;
+        if (!batt) {
+            return;
+        }
         batt.classList.remove("fa-battery-0");
         batt.classList.remove("fa-battery-1");
         batt.classList.remove("fa-battery-2");
@@ -287,19 +316,19 @@ class GCDataUnit extends HTMLElement {
     }
 
     toggleUsbConnection() {
-        if (this.usbLink.getPortStatus().state === "connected") {
-            this.usbLink.disconnectPort({ intentional: true });
+        if (this.transportService.getStatus("usb").state === "connected") {
+            this.transportService.disconnect("usb");
         } else {
-            this.usbLink.connectPort();
+            this.transportService.connect("usb");
         }
     }
 
     toggleBleConnection() {
-        if (this.bleLink.getPortStatus().state === 'connected') {
-            this.bleLink.disconnectPort({ intentional: true });
+        if (this.transportService.getStatus("ble").state === "connected") {
+            this.transportService.disconnect("ble");
         }
         else {
-            this.bleLink.connectPort();
+            this.transportService.connect("ble");
         }
     }
 
@@ -356,84 +385,6 @@ class GCDataUnit extends HTMLElement {
     }
 
 
-    updateStateMachine() {
-        let mess = "";
-        if (Date.now() < this.nextStateMachineUpdate) return;
-        this.nextStateMachineUpdate = Date.now() + 1000;
-        if (this.secondsPause > 0) {
-            this.secondsPause--;
-            return;
-        }
-        switch (this.phase) {
-            case Phases.IDLE:
-
-                break;
-            case Phases.WAIT_FOR_TARGET_PRESSURE:
-                if (this.targetPressureReached) {
-                    mess = `TARGET PRESSURE REACHED`;
-                    this.message.textContent = mess;
-                    this.phase = Phases.EVALUATE_Z_SPEED;
-                    this.testResult.hhmmss = new Date().toLocaleTimeString('en-GB');
-                    this.secondsElapsed = 0;
-                    this.secondsPause = 1;
-                }
-                break;
-            case Phases.EVALUATE_Z_SPEED:
-                this.testResult.velocity = this.velocity;
-                this.testResult.dt = this.secondsElapsed;
-                mess = `EVAL v = ${this.velocity.toFixed(3)} mm/min [${this.secondsElapsed}/${this.tMax}]`;
-                this.message.textContent = mess;
-                if (Math.abs(this.velocity) <= this.vMax)
-                    this.phase = Phases.EVALUATION_PASSED;
-                if (this.secondsElapsed >= this.tMax)
-                    this.phase = Phases.EVALUATION_FAILED;
-                this.secondsElapsed++;
-                break;
-            case Phases.EVALUATION_PASSED:
-                // PUBLISH TEST CONCLUSION PASSED
-                this.testResult.velocity = this.velocity;
-                this.testResult.dt = this.secondsElapsed;
-                this.testResult.passed = true;
-                this.emitTestMeasurement("new-measurement", this.testResult);
-                console.log(this.testResult);
-                mess = `PASS ${this.velocity.toFixed(3)} < ${this.vMax} mm/min after ${this.secondsElapsed} s`;
-                this.message.textContent = mess;
-                this.phase = Phases.TEST_COMPLETED;
-                if(this.procedureStepIndex==1) {
-                    console.log("Resetting z-axis because test procedure number is 1");
-                    this.sendCmd(`distance=zero\r\n`);
-                    this.testResult.z = 0.0; this.testResult.t = 0;
-                    const obs = {};
-                    obs.z = 0.0; obs.t = 0;
-                    this.history.fill(obs);
-                }
-                this.secondsPause = 4;
-                break;
-            case Phases.EVALUATION_FAILED:
-                // PUBLISH TEST CONCLUSION FAILED
-                this.testResult.velocity = this.velocity;
-                this.testResult.dt = this.secondsElapsed;
-                this.testResult.passed = false;
-                this.emitTestMeasurement("new-measurement", this.testResult);
-                console.log(this.testResult);
-                mess = `FAIL ${this.velocity.toFixed(3)} > ${this.vMax} mm/min after ${this.secondsElapsed} s`;
-                this.message.textContent = mess;
-                this.phase = Phases.TEST_COMPLETED;
-                this.secondsPause = 4;
-                break;
-            case Phases.TEST_COMPLETED:
-                this.phase = Phases.IDLE;
-                this.targetPressureReached = false;
-                if (this.procedureRunning) {
-                    this.startNextProcedureStep();
-                } else {
-                    this.message.textContent = "TEST COMPLETED";
-                    this.secondsPause = 2;
-                }
-                break;
-        }
-    }
-
     // This method is called when a new line of text is received either via USB or BLE
     processIncomingLine(textLine) {
         let inp = String(textLine);
@@ -452,10 +403,7 @@ class GCDataUnit extends HTMLElement {
                 this.velocityElement.value = this.addNewDistanceToHistory(distance);
             }
             this.pumpControlElement.pumpState = fast.h;
-            if(this.phase==Phases.EVALUATE_Z_SPEED) {
-               // We want the peak pressure recorded as testResult.pressure
-               if(pressure>this.testResult.pressure) this.testResult.pressure= pressure;
-            }
+                this.procedureController.recordFastMeasurement({ pressure, force, distance, velocity: this.velocity });
         }
         else
             if (inp.startsWith("$GC_BATT,")) {
@@ -469,81 +417,57 @@ class GCDataUnit extends HTMLElement {
                     //"$REQUESTED,target:%.2f,auto:%d
                     let requested = this.getJsObject(textLine, true);
                     if (requested == null) return;
-                    this.testResult.targetPressure = requested.target;
                     this.targetPressureElement.value = requested.target;
-                    this.testResult.dt = 0;
-                    this.targetPressureField.value = this.testResult.targetPressure;
-                    this.phase = Phases.WAIT_FOR_TARGET_PRESSURE;
+                    this.procedureController.recordTargetRequested(requested.target);
                 }
                 else
                     if (inp.startsWith("$REACHED,target")) {
                         //"$REACHED,target:%.2f,p:%.2f,f:%.2f,z:%.3f",
                         let reached = this.getJsObject(textLine, true);
                         if (reached == null) return;
-                        this.testResult.targetPressure = reached.target;
                         this.targetPressureElement.value = reached.target;
-                        this.testResult.pressure = reached.p;
-                        this.testResult.force = reached.f;
-                        this.testResult.distance = reached.z;
-                        this.targetPressureReached = true;
+                        this.procedureController.recordTargetReached({
+                            targetPressure: reached.target,
+                            pressure: reached.p,
+                            force: reached.f,
+                            distance: reached.z,
+                        });
                     }
-        this.updateStateMachine();
-
     }
 
     attributeChangedCallback() {
         this.componentIdentifier = this.getAttribute("componentIdentifier") || "DataUnit";
-        this.usbLink.configure({
+        this.transportService?.getTransport("usb").configure?.({
             componentIdentifier: this.componentIdentifier,
             storageScope: this.id || this.componentIdentifier || "default",
         });
         this.render();
     }
 
-    onTestProcedureChange(event) {
-        const testProcedure = event?.detail?.testProcedure;
-        if (testProcedure) {
-            this.testProcedure = testProcedure;
+    onProcedureStoreChange(event) {
+        this.procedureController.setProcedure(event.detail.procedure);
+    }
+
+    syncProcedureFromStore() {
+        const procedure = this.appStore?.getProcedure();
+        if (procedure) {
+            this.procedureController.setProcedure(procedure);
         }
     }
 
     async onStartTest() {
-        if (this.procedureRunning || this.phase !== Phases.IDLE) {
-            this.message.textContent = "A TEST IS ALREADY RUNNING";
-            return;
-        }
-
         this.startTestButton.disabled = true;
         try {
-            if (!this.testProcedure) {
+            if (!this.procedureController.procedure) {
                 const url = `${import.meta.env.BASE_URL}test_procedures/R211_2.2.4.json`;
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error(`Unable to load procedure (${response.status})`);
                 }
-                this.testProcedure = await response.json();
+                this.procedureController.setProcedure(await response.json());
             }
-
-            const steps = Array.isArray(this.testProcedure?.content) ? this.testProcedure.content : [];
-            this.procedureSteps = steps.map((step, index) => {
-                const targetPressure = this.parseNumber(step.targetPressure);
-                const vMax = this.parseNumber(step.vMax);
-                const tMax = this.parseNumber(step.tMax);
-                if (targetPressure === null || vMax === null || tMax === null || tMax < 0) {
-                    throw new Error(`Invalid values in procedure step ${step.step ?? index}`);
-                }
-                return { ...step, targetPressure, vMax, tMax };
-            });
-
-            if (this.procedureSteps.length === 0) {
-                throw new Error("The procedure contains no measurement steps");
-            }
-
-            this.procedureStepIndex = -1;
-            this.procedureRunning = true;
-            this.startNextProcedureStep();
+            this.procedureController.start();
         } catch (error) {
-            this.procedureRunning = false;
             this.startTestButton.disabled = false;
             this.message.textContent = `TEST START FAILED: ${error.message}`;
             this.emitAppLog("error", error.message);
@@ -551,156 +475,72 @@ class GCDataUnit extends HTMLElement {
     }
 
     onStopTest() {
-        this.procedureRunning = false;
-        this.procedureSteps = [];
-        this.procedureStepIndex = -1;
-        this.phase = Phases.IDLE;
-        this.secondsPause = 0;
-        this.targetPressureReached = false;
+        this.procedureController.stop();
         this.startTestButton.disabled = false;
-        this.sendCmd("pump=off");
-        this.message.textContent = "TEST STOPPED";
     }
 
-    startNextProcedureStep() {
-        this.procedureStepIndex++;
-        if (this.procedureStepIndex >= this.procedureSteps.length) {
-            this.procedureRunning = false;
-            this.startTestButton.disabled = false;
-            this.message.textContent = "TEST PROCEDURE COMPLETED";
+    onProcedureCommandRequested(event) {
+        event.detail.accepted = this.sendCmd(event.detail.command);
+    }
+
+    onProcedureStatus(event) {
+        this.message.textContent = event.detail.message;
+    }
+
+    onProcedureStepStarted(event) {
+        this.targetPressure = event.detail.step.targetPressure;
+        this.targetPressureField.value = event.detail.step.targetPressure;
+    }
+
+    onProcedureTargetRequested(event) {
+        this.targetPressureField.value = event.detail.targetPressure;
+    }
+
+    onProcedureMeasurementComplete(event) {
+        if (!this.appStore?.addMeasurement) {
+            throw new Error("Data unit requires an appStore to record measurements");
+        }
+        this.appStore.addMeasurement(event.detail.measurement);
+    }
+
+    onProcedureComplete() {
+        this.startTestButton.disabled = false;
+    }
+
+    onDistanceResetRequested() {
+        const obs = { z: 0.0, t: 0 };
+        this.history.fill(obs);
+    }
+
+
+    onTransportLog(event) {
+        const detail = event?.detail || {};
+        const level = detail.level || "info";
+        const source = detail.source || detail.transport || "Transport";
+        const message = detail.message || "(no message)";
+
+        this.emitAppLog(level, `[${source}] ${message}`);
+    }
+
+    onTransportStatus(event) {
+        const transport = event?.detail?.transport;
+        const state = event?.detail?.state;
+        const button = transport === "usb" ? this.usbButton : transport === "ble" ? this.bleButton : null;
+        if (!button || !state) {
             return;
         }
 
-        const step = this.procedureSteps[this.procedureStepIndex];
-        this.vMax = step.vMax;
-        this.tMax = step.tMax;
-        this.secondsElapsed = 0;
-        this.secondsPause = 0;
-        this.targetPressureReached = false;
-        this.testResult = {
-            nr: step.step ?? this.procedureStepIndex,
-            name: step.phase || `Step ${this.procedureStepIndex + 1}`,
-            targetPressure: step.targetPressure,
-            pressure: 0.0,
-            force: 0.0,
-            distance: 0.0,
-            velocity: 0.0,
-            vMax: step.vMax,
-            dt: 0,
-            tMax: step.tMax,
-            hhmmss: "00:00:00",
-            passed: false,
-        };
-
-        this.targetPressure = step.targetPressure;
-        this.targetPressureField.value = step.targetPressure;
-        this.message.textContent = `STEP ${this.procedureStepIndex + 1}/${this.procedureSteps.length}: REQUEST ${step.targetPressure} kPa`;
-        if (!this.sendCmd(`pump:target=${step.targetPressure}`)) {
-            this.procedureRunning = false;
-            this.startTestButton.disabled = false;
-            this.message.textContent = "TEST STOPPED: COMMAND COULD NOT BE SENT";
+        button.style.color = state === "connected" ? "green" : "black";
+        if (state === "connected") {
+            this.sendCmd("du:batt?", { target: transport });
         }
-    }
-
-
-    onUsbLinkLog(event) {
-        const detail = event?.detail || {};
-        const level = detail.level || "info";
-        const source = detail.source || "UsbLink";
-        const message = detail.message || "(no message)";
-
-        // Re-emit from this host element so bubbles/composed can reach document listeners.
-        this.emitAppLog(level, `[${source}] ${message}`);
-    }
-
-    onUsbLinkStatus(event) {
-        const state = event?.detail?.state;
-        if (state) {
-            if (state === "connected") {
-                this.usbButton.style.color = "green";
-                this.sendCmd("du:batt?", { target: "usb" });
-            } else {
-                this.usbButton.style.color = "black";
-            }
-        }
-    }
-
-    onBleLinkLog(event) {
-        const detail = event?.detail || {};
-        const level = detail.level || "info";
-        const source = detail.source || "BleLink";
-        const message = detail.message || "(no message)";
-
-        // Re-emit from this host element so bubbles/composed can reach document listeners.
-        this.emitAppLog(level, `[${source}] ${message}`);
-    }
-
-    resolveSendTarget(requestedTarget = "auto") {
-        const normalized = String(requestedTarget || "auto").trim().toLowerCase();
-        if (normalized === "usb" || normalized === "ble" || normalized === "any" || normalized === "both" || normalized === "all") {
-            return normalized;
-        }
-
-        if (this.usbLink?.linkState === "connected") {
-            return "usb";
-        }
-
-        if (this.bleLink?.linkState === "connected") {
-            return "ble";
-        }
-
-        return "any";
-    }
-
-    dispatchSendCmdEvent(textLine, options = {}) {
-        const normalizedText = typeof textLine === "string" ? textLine.trim() : "";
-        if (!normalizedText) {
-            return false;
-        }
-
-        const target = this.resolveSendTarget(options.target);
-        document.dispatchEvent(
-            new CustomEvent("gc-send-cmd", {
-                detail: {
-                    textLine: normalizedText,
-                    target,
-                    componentIdentifier: this.componentIdentifier,
-                },
-            }),
-        );
-        return true;
     }
 
     sendCmd(messageToSend, options = {}) {
-        return this.dispatchSendCmdEvent(messageToSend, options);
+        return this.transportService.sendCommand(messageToSend, options);
     }
 
-    onBleLinkStatus(event) {
-        const state = event?.detail?.state;
-        if (state) {
-            if (state === "connected") {
-                this.bleButton.style.color = "green";
-                this.sendCmd("du:batt?", { target: "ble" });
-            } else {
-                this.bleButton.style.color = "black";
-            }
-        }
-    }
-
-    onUsbSerialLine(event) {
-        const line = event?.detail?.line;
-        if (typeof line === "string") {
-            const normalizedLine = line.trim();
-            if (normalizedLine.startsWith("$")) {
-                this.processIncomingLine(normalizedLine);
-            }
-            else {
-                this.emitAppLog("debug", `RX line: ${normalizedLine}`);
-            }
-        }
-    }
-
-    onBleSerialLine(event) {
+    onTransportSerialLine(event) {
         const line = event?.detail?.line;
         if (typeof line === "string") {
             const normalizedLine = line.trim();
@@ -757,21 +597,6 @@ class GCDataUnit extends HTMLElement {
                     level,
                     source: this.id || this.tagName.toLowerCase(),
                     message,
-                    ...meta,
-                },
-                bubbles: true,
-                composed: true,
-            }),
-        );
-    }
-
-    emitTestMeasurement(action, measurement, meta = {}) {
-        this.dispatchEvent(
-            new CustomEvent("test-measurement", {
-                detail: {
-                    action,
-                    source: this.id || this.tagName.toLowerCase(),
-                    measurement,
                     ...meta,
                 },
                 bubbles: true,

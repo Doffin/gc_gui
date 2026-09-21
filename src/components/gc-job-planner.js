@@ -75,7 +75,12 @@ class GCJobPlanner extends HTMLElement {
         this.subProjectNameElement = root.getElementById("subProjectName");
         this.clientNameElement = root.getElementById("clientName");
         this.operatorNameElement = root.getElementById("operatorName") || null;
+        this.procedureBarElement = root.querySelector("gc-procedure-bar");
         this.loadDataFromJson = this.loadDataFromJson.bind(this);
+    }
+
+    setAppStore(appStore) {
+        this.procedureBarElement.setAppStore(appStore);
     }
 
     connectedCallback() {
@@ -146,18 +151,6 @@ class GCJobPlanner extends HTMLElement {
 
     render() {
         this.titleElement.textContent = this.getAttribute("title") || this.key;
-    }
-
-    sendCmd(textToSend) {
-        document.dispatchEvent(
-            new CustomEvent("gc-send-cmd", {
-                detail: {
-                    textLine: textToSend,
-                    componentIdentifier: this.key,
-                },
-            }),
-        );
-        return true;
     }
 
 }

@@ -6,6 +6,8 @@
   "plateDiameter_mm": 300,
   "plateDiameterOptions": [300, 600, 762],
   "procedureDocument": { "label":"Testprosedyre", "url":"doc\\R211 2.2.4 Platebelastning-2025.pdf", "tip":"Last opp dokument som beskriver testprosedyren" },
+  "delta1": { "p2Index":5,"p1Index":3},
+  "delta2": { "p2Index":14,"p1Index":10},
   "content": [
     {
       "step": 0,
@@ -13,19 +15,7 @@
       "comment": "Nullstilling av sensor",
       "targetPressure" : 0,
       "vMax" : 0.02,
-      "tMax" : 120,
-      "sequence": [
-        {
-          "action": "send_command",
-          "command": "tare",
-          "message": "Tare: Resetting force sensor..."
-        },
-        {
-          "action": "wait",
-          "duration_s": 2,
-          "message": "Waiting 2s after tare..."
-        }
-      ]
+      "tMax" : 120
     },
     {
       "step": 1,
@@ -33,19 +23,7 @@
       "comment": "Preload phase - Nullpunkt",
       "targetPressure" : 20,
       "vMax" : 0.02,
-      "tMax" : 60,
-      "sequence": [
-        {
-          "action": "wait",
-          "duration_s": 20, 
-          "message": "Waiting for ground to settle" 
-        },
-        {
-          "action": "send_command",
-          "command": "s=0",
-          "message": "Resetting settling probe (s=0)..."
-        }
-      ]
+      "tMax" : 60
     },
     {
       "step": 2,
@@ -53,9 +31,7 @@
       "targetPressure" : 50,
       "comment": "",
       "vMax" : 0.02,
-      "tMax" : 60,
-      "sequence": [
-      ]
+      "tMax" : 60
     },
     {
       "step": 3,

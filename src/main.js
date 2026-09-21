@@ -11,8 +11,66 @@ import "./components/gc-dataunit.js";
 import "./components/gc-pump-control.js";
 import "./components/gc-procedure-bar.js";
 import "./components/gc-graph.js";
-import "./components/gc-usblink.js";
-import "./components/gc-blelink.js";
+import { MainController } from "./controllers/main-controller.js";
+import { GcUsbLink } from "./components/gc-usblink.js";
+import { GcBleLink } from "./components/gc-blelink.js";
+import { TransportService } from "./services/transport-service.js";
+import { AppStore } from "./services/app-store.js";
+
+export const appStore = new AppStore();
+export const mainController = new MainController({ appStore });
+export const transportService = new TransportService({
+    transports: {
+        usb: new GcUsbLink({
+            componentIdentifier: "DataUnit",
+            storageScope: "DataUnit",
+        }),
+        ble: new GcBleLink({
+            componentIdentifier: "DataUnit",
+            serviceUuid: "6e400001-b5a3-f393-e0a9-e50e24dcca9e",
+        }),
+    },
+});
+
+const dataUnit = document.getElementById("DataUnit");
+if (dataUnit) {
+    dataUnit.setTransportService(transportService);
+    dataUnit.setConnectionControls({
+        usbButton: document.getElementById("usbButton"),
+        bleButton: document.getElementById("bleButton"),
+        batteryIcon: document.getElementById("batteryIcon"),
+    });
+    dataUnit.setAppStore(appStore);
+}
+
+const jobPlanner = document.getElementById("JobPlanner");
+if (jobPlanner) {
+    jobPlanner.setAppStore(appStore);
+}
+
+const settingsPage = document.getElementById("SettingsPage");
+if (settingsPage) {
+    settingsPage.setAppStore(appStore);
+}
+
+const measurementsTable = document.getElementById("MeasurementTable");
+if (measurementsTable) {
+    measurementsTable.setAppStore(appStore);
+}
+
+export const mainControllerReady = mainController.loadSurveyModel().catch((error) => {
+    console.error("Failed to initialize the survey model:", error);
+    throw error;
+});
+
+appStore.addEventListener("measurement-recorded", async (event) => {
+    try {
+        await mainControllerReady;
+        mainController.addMeasurement(event.detail.measurement);
+    } catch (error) {
+        console.error("Failed to save test measurement:", error);
+    }
+});
 
 //import { loadLanguageCatalog, supportedLanguagesCatalog } from "./components/locale/locale-loader.js";
 /*

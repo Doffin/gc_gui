@@ -57,6 +57,15 @@ class GCProcedureBar extends HTMLElement {
         this.onTestProcedureChange = this.onTestProcedureChange.bind(this);
         this.selectPlateDiameterElement = root.getElementById("selectPlateDiameter");
         this.onPlateDiameterChange = this.onPlateDiameterChange.bind(this);
+        this.appStore = null;
+    }
+
+    setAppStore(appStore) {
+        if (!appStore || typeof appStore.setProcedure !== "function") {
+            throw new TypeError("appStore must provide setProcedure()");
+        }
+        this.appStore = appStore;
+        if (this.isConnected && !this.proceduresInitialized) this.initTestProcedures();
     }
 
     connectedCallback() {
@@ -64,7 +73,6 @@ class GCProcedureBar extends HTMLElement {
         document.addEventListener("new-language-selected", this.onLanguageChange);
         this.selectTestProcedureElement.addEventListener('change', this.onTestProcedureChange);
         this.selectPlateDiameterElement.addEventListener('change', this.onPlateDiameterChange);
-        this.initTestProcedures();
         this.render();
     }
 
@@ -106,9 +114,18 @@ class GCProcedureBar extends HTMLElement {
 
 
     async initTestProcedures() {
+        if (this.proceduresInitialized) return;
+        this.proceduresInitialized = true;
         const url = `${import.meta.env.BASE_URL}test_procedures/procedures.json`;
-        const response = await fetch(url);
-        const jsn = await response.json();
+        let response;
+        let jsn;
+        try {
+            response = await fetch(url);
+            jsn = await response.json();
+        } catch (error) {
+            this.proceduresInitialized = false;
+            throw error;
+        }
         let list = this.selectTestProcedureElement;
         while (list.hasChildNodes()) {
             list.removeChild(list.firstChild);
@@ -141,15 +158,10 @@ class GCProcedureBar extends HTMLElement {
             this.selectPlateDiameterElement.add(newOption);
         }
 
-        document.dispatchEvent(
-            new CustomEvent("test-procedure-change", {
-                detail: {
-                    testProcedure: procedure,
-                    plateDiameter: procedure.plateDiameter_mm,
-                    componentIdentifier: this.componentIdentifier,
-                },
-            }),
-        );
+        if (!this.appStore) {
+            throw new Error("Procedure bar requires an injected appStore");
+        }
+        this.appStore.setProcedure(procedure);
     }
 
 
